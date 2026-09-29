@@ -12,7 +12,7 @@ export const HAIR_COLORS = ["#1c1613", "#3a2416", "#6f4323", "#9c5a2c", "#bdb6ad
 export const HAIR_STYLES = ["short", "long", "braids", "bald"] as const;
 export type HairStyle = (typeof HAIR_STYLES)[number];
 
-export const OUTFITS = ["outfit-simple", "outfit-kamzol", "outfit-shapan", "outfit-koilek", "outfit-ton", "outfit-sauyt"] as const;
+export const OUTFITS = ["outfit-simple", "outfit-kamzol", "outfit-shapan", "outfit-koilek", "outfit-ton", "outfit-sauyt", "outfit-altyn-adam"] as const;
 export const HATS = ["hat-none", "hat-taqiya", "hat-taqiya-kiiz", "hat-taqiya-zer", "hat-borik", "hat-tymaq", "hat-saukele", "hat-dulygha"] as const;
 export const COLORS = [
   "color-green",
@@ -74,7 +74,14 @@ export function parseAvatar(raw: unknown): AvatarConfig {
   }
 }
 
+/** Цельный костюм: головной убор и цвет входят в комплект. */
+export const FULL_SETS: readonly string[] = ["outfit-altyn-adam"];
+
+export function isFullSet(a: AvatarConfig) {
+  return FULL_SETS.includes(a.outfit);
+}
+
 /** Платные части внешности, которые нужно проверить по покупкам. */
 export function paidParts(a: AvatarConfig) {
-  return [a.outfit, a.hat, a.color];
+  return isFullSet(a) ? [a.outfit] : [a.outfit, a.hat, a.color];
 }

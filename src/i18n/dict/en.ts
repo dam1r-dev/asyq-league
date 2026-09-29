@@ -276,6 +276,10 @@ const en: Dict = {
     loginPrompt2: " so your scores make it to the leaderboard.",
   },
   shop: {
+    premiumTitle: "👑 Altyn Adam",
+    premiumText: "The legendary costume of the Golden Man — a symbol of Kazakhstan. Worn as a full set, with a golden glow visible on the leaderboard.",
+    premiumReq: "Requires ⭐ {n} in challenges",
+    premiumHave: "You have ⭐ {n}",
     balance: "Balance",
     outfit: "Nomad outfits",
     outfitText: "Shapan, kamzol, ton, a batyr's armour. Worn by your character.",
@@ -327,6 +331,7 @@ const en: Dict = {
     payError: "Payment error",
   },
   item: {
+    "outfit-altyn-adam": "The full costume of the Golden Man from the Issyk kurgan: arrow-crowned cap, gold-plated kaftan, akinak dagger and a golden glow.",
     "outfit-simple": "A simple tank top. Free.",
     "outfit-kamzol": "A white shirt and an embroidered kamzol vest.",
     "outfit-shapan": "A long shapan robe with gold embroidery.",
@@ -394,6 +399,7 @@ const en: Dict = {
     toShop: "To the shop",
   },
   avatar: {
+    fullSet: "A full set: headwear and colour are included.",
     title: "Character",
     lead: "Build your own nomad. Appearance is always free; costumes and hats cost tiyn.",
     skin: "Skin",
@@ -440,6 +446,7 @@ const en: Dict = {
   },
   uni: { other: "Other" },
   err: {
+    notEnoughStars: "You need more stars in challenges",
     notEnoughCoins: "Not enough tiyn",
     needLogin: "Please log in",
     badData: "Invalid data",

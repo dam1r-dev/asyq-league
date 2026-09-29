@@ -13,12 +13,14 @@ import {
   HATS,
   OUTFITS,
   SKIN_TONES,
+  isFullSet,
   paidParts,
   type AvatarConfig,
 } from "@/avatar/config";
 import { getItem, isFree } from "@/lib/catalog";
 import { useT } from "@/i18n/provider";
 import { errorText } from "@/i18n/game";
+import { LEVELS } from "@/game/levels";
 
 export default function AvatarPage() {
   const { avatar, me, owns, coins, saveAvatar, refresh, toast } = useAccount();
@@ -31,6 +33,10 @@ export default function AvatarPage() {
 
   const missing = paidParts(a).filter((id) => !owns(id));
   const missingCost = missing.reduce((s, id) => s + (getItem(id)?.price ?? 0), 0);
+  // Премиальные вещи требуют ещё и звёзд.
+  const stars = LEVELS.reduce((sum, l) => sum + (me?.progress[l.id]?.stars ?? 0), 0);
+  const starsNeeded = Math.max(0, ...missing.map((id) => getItem(id)?.requiresStars ?? 0));
+  const starsOk = stars >= starsNeeded;
   const changed = draft !== null && JSON.stringify(draft) !== JSON.stringify(avatar);
 
   const save = async () => {
@@ -121,7 +127,10 @@ export default function AvatarPage() {
               ))}
             </div>
           </Section>
-          <Section title={t("avatar.hat")}>
+          {isFullSet(a) && (
+            <p className="rounded-xl border border-gold/50 bg-gold/10 px-3 py-2 text-sm font-semibold">👑 {t("avatar.fullSet")}</p>
+          )}
+          <Section title={t("avatar.hat")} disabled={isFullSet(a)}>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {HATS.map((id) => (
                 <PartButton key={id} id={id} selected={a.hat === id} owned={owns(id)} onClick={() => set({ hat: id })}>
@@ -130,7 +139,7 @@ export default function AvatarPage() {
               ))}
             </div>
           </Section>
-          <Section title={t("avatar.color")}>
+          <Section title={t("avatar.color")} disabled={isFullSet(a)}>
             <div className="flex flex-wrap gap-2">
               {COLORS.map((id) => {
                 const owned = owns(id);
@@ -176,15 +185,19 @@ export default function AvatarPage() {
             <>
               <div className="flex-1 text-sm">
                 {missing.length > 0 && (
-                  <span className={coins >= missingCost ? "text-muted" : "text-bad"}>
+                  <span className={coins >= missingCost && starsOk ? "text-muted" : "text-bad"}>
                     {missing.map((id) => getItem(id)?.name ?? id).join(", ")}:{" "}
-                    {coins >= missingCost ? `${missingCost} 🪙` : t("avatar.notEnough", { n: missingCost - coins })}
+                    {!starsOk
+                      ? `${t("shop.premiumReq", { n: starsNeeded })} (${t("shop.premiumHave", { n: stars })})`
+                      : coins >= missingCost
+                        ? `${missingCost} 🪙`
+                        : t("avatar.notEnough", { n: missingCost - coins })}
                   </span>
                 )}
               </div>
               <button
                 className="btn btn-primary"
-                disabled={!changed || busy || (missing.length > 0 && coins < missingCost)}
+                disabled={!changed || busy || (missing.length > 0 && (coins < missingCost || !starsOk))}
                 onClick={save}
               >
                 {busy ? "…" : missing.length ? t("avatar.buy", { price: missingCost }) : t("avatar.save")}
@@ -197,9 +210,9 @@ export default function AvatarPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, disabled }: { title: string; children: React.ReactNode; disabled?: boolean }) {
   return (
-    <section className="card p-4">
+    <section className={`card p-4 ${disabled ? "pointer-events-none opacity-40" : ""}`} inert={disabled}>
       <h2 className="mb-3 text-sm font-bold text-muted uppercase">{title}</h2>
       {children}
     </section>
@@ -240,7 +253,9 @@ function PartButton({
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center rounded-xl border p-1.5 text-center ${selected ? "border-gold bg-surface-2" : "border-line"}`}
+      className={`relative flex flex-col items-center rounded-xl border p-1.5 text-center ${selected ? "border-gold bg-surface-2" : "border-line"} ${
+        item?.requiresStars ? "ring-2 ring-gold/60" : ""
+      }`}
     >
       {children}
       <span className="mt-1 text-[11px] leading-tight font-semibold">{item?.name}</span>

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { COLOR_HEX, EYE_COLORS, HAIR_COLORS, SKIN_TONES, type AvatarConfig } from "./config";
 
 /**
@@ -40,16 +41,19 @@ export default function Avatar({
   const c = COLOR_HEX[config.color];
   const cDark = shade(c, -0.25);
   const nomad = config.outfit !== "outfit-simple";
+  const altyn = config.outfit === "outfit-altyn-adam";
+  const uid = useId().replace(/:/g, "");
 
   const viewBox = variant === "head" ? "44 18 112 112" : "0 -42 200 350";
 
   return (
     <svg viewBox={viewBox} className={className} role="img" aria-label={title ?? "avatar"}>
+      {altyn && <AltynAdamBack uid={uid} full={variant === "full"} />}
       {/* Волосы сзади */}
-      {config.hair === "long" && (
+      {!altyn && config.hair === "long" && (
         <path d="M58 82 Q56 38 100 36 Q144 38 142 82 L146 150 Q100 160 54 150 Z" fill={hair} />
       )}
-      {config.hair === "braids" && (
+      {!altyn && config.hair === "braids" && (
         <g fill={hair}>
           <path d="M58 84 Q56 38 100 36 Q144 38 142 84 L140 120 L60 120 Z" />
           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -61,7 +65,12 @@ export default function Avatar({
         </g>
       )}
 
-      {variant === "full" && <Body config={config} skin={skin} skinDark={skinDark} c={c} cDark={cDark} nomad={nomad} />}
+      {variant === "full" &&
+        (altyn ? (
+          <AltynAdamBody uid={uid} skin={skin} />
+        ) : (
+          <Body config={config} skin={skin} skinDark={skinDark} c={c} cDark={cDark} nomad={nomad} />
+        ))}
 
       {/* Шея и голова */}
       <rect x={90} y={120} width={20} height={20} fill={skinDark} />
@@ -80,15 +89,15 @@ export default function Avatar({
       <path d="M87 108 Q100 118 113 108" fill="none" stroke="#6b3f22" strokeWidth={3} strokeLinecap="round" />
 
       {/* Волосы спереди */}
-      {config.hair !== "bald" && (
+      {!altyn && config.hair !== "bald" && (
         <path
           d="M60 86 Q56 42 100 40 Q144 42 140 86 Q136 70 128 60 Q108 66 84 60 Q70 64 60 86 Z"
           fill={hair}
         />
       )}
-      {config.hair === "bald" && <path d="M92 47 Q100 40 108 47 Q100 45 92 47 Z" fill={hair} />}
+      {!altyn && config.hair === "bald" && <path d="M92 47 Q100 40 108 47 Q100 45 92 47 Z" fill={hair} />}
 
-      <Hat hat={config.hat} c={c} cDark={cDark} />
+      {altyn ? <AltynAdamHat uid={uid} /> : <Hat hat={config.hat} c={c} cDark={cDark} />}
     </svg>
   );
 }
@@ -394,4 +403,112 @@ function Hat({ hat, c, cDark }: { hat: AvatarConfig["hat"]; c: string; cDark: st
     default:
       return null;
   }
+}
+
+/*
+ * «Алтын адам» — Золотой человек из кургана Иссык (V–IV вв. до н.э.).
+ * Цельный премиальный костюм: красный кафтан в золотых треугольных бляшках,
+ * плащ, пояс с акинаком и высокий остроконечный головной убор со стрелами.
+ */
+const AA_RED = "#b3202a";
+const AA_RED_DARK = "#7e141c";
+const AA_GOLD = "#f0bf3c";
+const AA_GOLD_DARK = "#b9831b";
+
+function AltynAdamDefs({ uid }: { uid: string }) {
+  return (
+    <defs>
+      <pattern id={`aa-tri-${uid}`} width={8} height={7} patternUnits="userSpaceOnUse">
+        <rect width={8} height={7} fill={AA_RED_DARK} />
+        <path d="M0 7 L4 0.5 L8 7 Z" fill={AA_GOLD} stroke={AA_GOLD_DARK} strokeWidth={0.6} />
+      </pattern>
+      <radialGradient id={`aa-aura-${uid}`} cx="50%" cy="45%" r="55%">
+        <stop offset="0" stopColor="#ffd970" stopOpacity={0.55} />
+        <stop offset="1" stopColor="#ffd970" stopOpacity={0} />
+      </radialGradient>
+    </defs>
+  );
+}
+
+function AltynAdamBack({ uid, full }: { uid: string; full: boolean }) {
+  return (
+    <g>
+      <AltynAdamDefs uid={uid} />
+      {/* Золотое сияние — видно издалека, даже в рейтинге */}
+      <ellipse cx={100} cy={full ? 140 : 80} rx={full ? 98 : 60} ry={full ? 190 : 60} fill={`url(#aa-aura-${uid})`} />
+      {full && <path d="M66 138 L40 296 Q100 308 160 296 L134 138 Z" fill={AA_RED_DARK} />}
+      {/* Назатыльник головного убора */}
+      <path d="M56 70 Q54 120 66 146 L134 146 Q146 120 144 70 Z" fill={AA_RED} />
+    </g>
+  );
+}
+
+function AltynAdamBody({ uid, skin }: { uid: string; skin: string }) {
+  const tri = `url(#aa-tri-${uid})`;
+  return (
+    <g>
+      {/* Сапоги в бляшках */}
+      <rect x={76} y={250} width={20} height={48} rx={3} fill={tri} />
+      <rect x={104} y={250} width={20} height={48} rx={3} fill={tri} />
+      <rect x={70} y={292} width={28} height={10} rx={5} fill="#5b3a1f" />
+      <rect x={102} y={292} width={28} height={10} rx={5} fill="#5b3a1f" />
+      {/* Штаны */}
+      <path d="M70 226 H130 V256 H104 V240 H96 V256 H70 Z" fill={AA_RED} />
+      {/* Рукава */}
+      <rect x={48} y={140} width={22} height={82} rx={9} fill={tri} />
+      <rect x={130} y={140} width={22} height={82} rx={9} fill={tri} />
+      <rect x={48} y={212} width={22} height={9} rx={3} fill={AA_GOLD} />
+      <rect x={130} y={212} width={22} height={9} rx={3} fill={AA_GOLD} />
+      <circle cx={59} cy={229} r={8} fill={skin} />
+      <circle cx={141} cy={229} r={8} fill={skin} />
+      {/* Кафтан */}
+      <path d="M66 138 Q66 134 74 134 L126 134 Q134 134 134 138 L138 240 L62 240 Z" fill={tri} />
+      <path d="M100 136 L100 240" stroke={AA_GOLD} strokeWidth={4} />
+      <path d="M62 236 H138" stroke={AA_GOLD} strokeWidth={4} />
+      {/* Золотой пояс с бляшками */}
+      <rect x={62} y={196} width={76} height={12} rx={3} fill={AA_GOLD} stroke={AA_GOLD_DARK} strokeWidth={1} />
+      {[70, 84, 100, 116, 130].map((x) => (
+        <rect key={x} x={x - 4} y={198} width={8} height={8} rx={1.5} fill={AA_GOLD_DARK} />
+      ))}
+      {/* Акинак на поясе */}
+      <path d="M126 206 L150 262" stroke={AA_RED_DARK} strokeWidth={7} strokeLinecap="round" />
+      <path d="M126 206 L150 262" stroke={AA_GOLD} strokeWidth={2} strokeDasharray="4 4" />
+      <path d="M118 196 L132 214" stroke={AA_GOLD} strokeWidth={5} strokeLinecap="round" />
+      {/* Гривна на шее */}
+      <path d="M84 138 Q100 150 116 138" fill="none" stroke={AA_GOLD} strokeWidth={4} strokeLinecap="round" />
+    </g>
+  );
+}
+
+function AltynAdamHat({ uid }: { uid: string }) {
+  return (
+    <g>
+      {/* Высокий остроконечный головной убор */}
+      <path d="M62 66 Q70 20 92 -34 L108 -34 Q130 20 138 66 Z" fill={AA_RED} />
+      <path d="M92 -34 L100 -40 L108 -34 Z" fill={AA_GOLD} />
+      {/* Золотые стрелы, торчащие вверх */}
+      {[82, 92, 108, 118].map((x, i) => (
+        <g key={x} stroke={AA_GOLD} strokeWidth={2} strokeLinecap="round">
+          <path d={`M${x} 56 L${x + (i < 2 ? -6 : 6)} ${-6 + i * 3}`} />
+          <path
+            d={`M${x + (i < 2 ? -6 : 6)} ${-6 + i * 3} l-3 6 M${x + (i < 2 ? -6 : 6)} ${-6 + i * 3} l3 6`}
+            strokeWidth={1.6}
+          />
+        </g>
+      ))}
+      {/* Бляшки-звери и полосы */}
+      {[10, 26, 42].map((y) => (
+        <path key={y} d={`M${86 - (y - 10) * 0.12} ${y} q14 -6 28 0`} fill="none" stroke={AA_GOLD} strokeWidth={2.2} />
+      ))}
+      <path d="M94 -14 l6 -8 l6 8 z M93 0 l7 -8 l7 8 z" fill={AA_GOLD} />
+      {/* Золотой обод по лбу */}
+      <path d="M60 62 Q100 50 140 62 L140 72 Q100 60 60 72 Z" fill={AA_GOLD} stroke={AA_GOLD_DARK} strokeWidth={1} />
+      {[70, 85, 100, 115, 130].map((x) => (
+        <circle key={x} cx={x} cy={64} r={2} fill={AA_RED_DARK} />
+      ))}
+      {/* Боковые пластины назатыльника */}
+      <path d="M56 76 L66 76 L68 134 L58 128 Z" fill={`url(#aa-tri-${uid})`} />
+      <path d="M144 76 L134 76 L132 134 L142 128 Z" fill={`url(#aa-tri-${uid})`} />
+    </g>
+  );
 }

@@ -36,6 +36,8 @@ export interface ShopItem {
   /** Только для пакетов тиынов: цена в тенге (тестовая оплата) и сколько тиынов. */
   priceKzt?: number;
   coins?: number;
+  /** Премиальный предмет: купить можно только набрав столько звёзд в испытаниях. */
+  requiresStars?: number;
   saqa?: SaqaLook;
   field?: FieldLook;
 }
@@ -119,6 +121,8 @@ export const CATALOG: ShopItem[] = [
   { id: "outfit-koilek", kind: "outfit", name: "Қыз көйлегі", description: "", price: 200 },
   { id: "outfit-ton", kind: "outfit", name: "Тон", description: "", price: 300 },
   { id: "outfit-sauyt", kind: "outfit", name: "Батыр сауыты", description: "", price: 450 },
+  // Цельный премиальный костюм: нужны и тиыны, и мастерство.
+  { id: "outfit-altyn-adam", kind: "outfit", name: "Алтын адам", description: "", price: 5000, requiresStars: 24 },
   // ——— Головные уборы
   { id: "hat-none", kind: "hat", name: "—", description: "", price: 0 },
   { id: "hat-taqiya", kind: "hat", name: "Ою тақия", description: "", price: 0 },

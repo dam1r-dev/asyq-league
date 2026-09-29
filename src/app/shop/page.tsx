@@ -6,7 +6,8 @@ import { useAccount } from "@/components/AccountProvider";
 import ItemPreview from "@/components/ItemPreview";
 import Avatar from "@/avatar/Avatar";
 import type { AvatarConfig } from "@/avatar/config";
-import { CATALOG, type ShopItem } from "@/lib/catalog";
+import { CATALOG, getItem, type ShopItem } from "@/lib/catalog";
+import { LEVELS } from "@/game/levels";
 import { useT } from "@/i18n/provider";
 import { errorText } from "@/i18n/game";
 
@@ -69,6 +70,8 @@ export default function ShopPage() {
         </div>
       </div>
 
+      <PremiumCard busy={busy === "outfit-altyn-adam"} onBuy={() => buy(getItem("outfit-altyn-adam")!)} />
+
       <div className="card mt-3 border-sky/40 bg-sky/5 p-4 text-sm leading-relaxed">
         <b className="text-sky">{t("shop.testBanner1")}</b> {t("shop.testBanner3")}
       </div>
@@ -78,7 +81,7 @@ export default function ShopPage() {
           <h2 className="font-display text-lg font-bold">{t(s.title)}</h2>
           <p className="text-sm text-muted">{t(s.text)}</p>
           <div className={`mt-3 grid gap-3 ${s.kind === "color" ? "grid-cols-3 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"}`}>
-            {CATALOG.filter((i) => i.kind === s.kind && i.id !== "hat-none").map((item) => {
+            {CATALOG.filter((i) => i.kind === s.kind && i.id !== "hat-none" && !i.requiresStars).map((item) => {
               const owned = owns(item.id);
               const equipped = item.id === saqaSkin || item.id === fieldSkin;
               const isAvatarPart = item.kind === "outfit" || item.kind === "hat" || item.kind === "color";
@@ -181,6 +184,57 @@ export default function ShopPage() {
 
       {topup && <TestPayment item={topup} onClose={() => setTopup(null)} />}
     </div>
+  );
+}
+
+/** Витрина премиального костюма «Алтын адам»: 5000 🪙 и 24 звезды. */
+function PremiumCard({ busy, onBuy }: { busy: boolean; onBuy: () => void }) {
+  const { me, owns, avatar, coins } = useAccount();
+  const t = useT();
+  const item = getItem("outfit-altyn-adam")!;
+  const need = item.requiresStars ?? 0;
+  const stars = LEVELS.reduce((s, l) => s + (me?.progress[l.id]?.stars ?? 0), 0);
+  const owned = owns(item.id);
+  const canBuy = !!me && stars >= need && coins >= item.price;
+  return (
+    <section className="mt-6 overflow-hidden rounded-[22px] border-2 border-gold/70 bg-gradient-to-br from-[#3a1410] via-[#5a1d14] to-[#2a1509] p-4 text-[#fbeed2] shadow-[0_0_40px_-10px_rgba(240,191,60,0.6)]">
+      <div className="grid items-center gap-4 sm:grid-cols-[180px_1fr]">
+        <div className="flex justify-center">
+          <Avatar config={{ ...avatar, outfit: "outfit-altyn-adam" }} className="h-[240px] w-auto" />
+        </div>
+        <div>
+          <h2 className="font-display text-2xl font-extrabold text-[#f0bf3c]">{t("shop.premiumTitle")}</h2>
+          <p className="mt-2 text-sm leading-relaxed opacity-90">{t("shop.premiumText")}</p>
+          <p className="mt-2 text-xs opacity-80">{t("item.outfit-altyn-adam")}</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            <span className="rounded-full border border-[#f0bf3c]/60 px-2.5 py-1">🪙 {item.price}</span>
+            <span className="rounded-full border border-[#f0bf3c]/60 px-2.5 py-1">{t("shop.premiumReq", { n: need })}</span>
+            {me && <span className="rounded-full bg-black/25 px-2.5 py-1">{t("shop.premiumHave", { n: stars })}</span>}
+          </div>
+          <div className="mt-4">
+            {owned ? (
+              <Link href="/avatar" className="btn btn-primary">
+                {t("shop.wear")}
+              </Link>
+            ) : !me ? (
+              <Link href="/auth" className="btn btn-primary">
+                {t("shop.loginToBuy")}
+              </Link>
+            ) : (
+              <button className="btn btn-primary" disabled={!canBuy || busy} onClick={onBuy}>
+                {busy
+                  ? "…"
+                  : stars < need
+                    ? t("shop.premiumReq", { n: need })
+                    : coins < item.price
+                      ? t("shop.notEnough", { n: item.price - coins })
+                      : `${item.price} 🪙`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
