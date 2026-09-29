@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useIsClient } from "@/lib/useIsClient";
 import { useT } from "@/i18n/provider";
-import { useAccount, toggleSound } from "@/components/AccountProvider";
+import { sideName } from "@/i18n/game";
+import { useAccount, toggleMoveControl, toggleSound } from "@/components/AccountProvider";
 import GameCanvas from "@/components/game/GameCanvas";
 import { DUEL_THROWS_EACH, duelThrow, initDuel, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
@@ -49,6 +50,19 @@ function Duel() {
   const [names, setNames] = useState<[string, string]>(["", ""]);
   const [duel, setDuel] = useState<DuelState | null>(restored?.duel ?? null);
   const [inputs, setInputs] = useState<ThrowInput[]>(restored?.inputs ?? []);
+  const [runId, setRunId] = useState(0);
+  const moveControl = local.settings.moveControl ?? "buttons";
+
+  /** Начать эту же дуэль заново с теми же игроками. */
+  const restartDuel = () => {
+    if (!duel) return;
+    setRunId((n) => n + 1);
+    setDuel(initDuel(duel.names));
+    setInputs([]);
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ names: duel.names, inputs: [] }));
+    } catch {}
+  };
 
   const start = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +146,23 @@ function Duel() {
           ←
         </Link>
         <div className="flex-1 font-display text-[15px] font-bold">{t("duel.short")}</div>
+        <button
+          className="btn btn-ghost h-10 w-10 !p-0 text-lg"
+          onClick={restartDuel}
+          disabled={inputs.length === 0}
+          aria-label={t("play.restart")}
+          title={t("play.restart")}
+        >
+          ↺
+        </button>
+        <button
+          className="btn btn-ghost h-10 w-10 !p-0 text-[11px] tracking-tighter"
+          onClick={toggleMoveControl}
+          aria-label={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
+          title={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
+        >
+          {moveControl === "slider" ? "◀▶" : "━●━"}
+        </button>
         <button className="btn btn-ghost h-10 w-10 !p-0" onClick={toggleSound} aria-label={local.settings.sound ? t("common.soundOff") : t("common.soundOn")}>
           {local.settings.sound ? "🔊" : "🔇"}
         </button>
@@ -161,6 +192,8 @@ function Duel() {
 
       <div className="relative min-h-0 flex-1">
         <GameCanvas
+          key={runId}
+          moveControl={moveControl}
           level={duel.field.level}
           asyks={duel.field.asyks}
           disabled={duel.status !== "playing"}
@@ -175,7 +208,7 @@ function Duel() {
                     <div className="text-xs text-muted">
                       {duel.names[last.player]}:{" "}
                       {last.result.knockedIds.length
-                        ? t("duel.knocked", { n: last.result.knockedIds.length, sides: last.result.sides.join(", ") })
+                        ? t("duel.knocked", { n: last.result.knockedIds.length, sides: last.result.sides.map((x) => sideName(x, t)).join(", ") })
                         : t("duel.miss")}
                       {last.result.penalty ? t("duel.penalty") : ""}
                     </div>

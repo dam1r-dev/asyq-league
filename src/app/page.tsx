@@ -6,6 +6,7 @@ import AsyqMark from "@/components/AsyqMark";
 import { LEVELS } from "@/game/levels";
 import { useLocal } from "@/lib/local";
 import { useT } from "@/i18n/provider";
+import { levelTitle } from "@/i18n/game";
 
 export default function Home() {
   const local = useLocal();
@@ -33,7 +34,7 @@ export default function Home() {
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href={`/play/${firstTime ? "l1" : nextLevel.id}`} className="btn btn-primary w-full max-w-xs px-8 py-4 text-lg sm:w-auto">
-            {firstTime ? t("home.playTutorial") : t("home.playLevel", { title: nextLevel.title })}
+            {firstTime ? t("home.playTutorial") : t("home.playLevel", { title: levelTitle(nextLevel, t) })}
           </Link>
           <Link href="/rules" className="btn btn-ghost w-full max-w-xs sm:w-auto">
             {t("home.rules")}

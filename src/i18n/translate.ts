@@ -46,6 +46,7 @@ export function makeT(lang: Lang) {
     return interpolate(text, params);
   }
   /** Перевод, если ключ существует, иначе undefined. */
+  t.lang = lang;
   t.maybe = (key: string, params?: Params) => (lookup(dict, key) ?? lookup(fallback, key) ? t(key, params) : undefined);
   return t;
 }

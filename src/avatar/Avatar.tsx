@@ -83,6 +83,13 @@ export default function Avatar({
       <circle cx={115} cy={90} r={5.5} fill={eye} />
       <circle cx={86.8} cy={88.2} r={1.6} fill="#fff" opacity={0.9} />
       <circle cx={116.8} cy={88.2} r={1.6} fill="#fff" opacity={0.9} />
+      {config.gender === "f" && (
+        <g>
+          <path d="M79 85 l-4 -3 M81 83 l-2 -4 M121 85 l4 -3 M119 83 l2 -4" stroke="#3b2416" strokeWidth={1.6} strokeLinecap="round" />
+          <ellipse cx={76} cy={101} rx={6} ry={3.5} fill="#e98a7a" opacity={0.45} />
+          <ellipse cx={124} cy={101} rx={6} ry={3.5} fill="#e98a7a" opacity={0.45} />
+        </g>
+      )}
       {config.mustache && (
         <path d="M88 103 Q94 99 100 102 Q106 99 112 103 Q106 107 100 104 Q94 107 88 103 Z" fill={hair} />
       )}
@@ -180,13 +187,21 @@ function Body({
       {/* Одежда */}
       {o === "outfit-simple" && (
         <g>
-          <path d="M70 218 H130 V254 H106 V236 H94 V254 H70 Z" fill="#2d3e50" />
+          {config.gender === "f" ? (
+            <path d="M70 216 H130 L140 266 Q100 274 60 266 Z" fill={cDark} />
+          ) : (
+            <path d="M70 218 H130 V254 H106 V236 H94 V254 H70 Z" fill="#2d3e50" />
+          )}
           <path d="M70 142 Q70 136 78 136 L86 136 Q100 156 114 136 L122 136 Q130 136 130 142 L130 222 L70 222 Z" fill={c} />
         </g>
       )}
       {o === "outfit-kamzol" && (
         <g>
-          <path d="M72 216 H128 V258 H106 V240 H94 V258 H72 Z" fill="#3a2f28" />
+          {config.gender === "f" ? (
+            <path d="M70 214 H130 L142 284 Q100 292 58 284 Z" fill={cDark} />
+          ) : (
+            <path d="M72 216 H128 V258 H106 V240 H94 V258 H72 Z" fill="#3a2f28" />
+          )}
           <path d="M68 140 Q68 134 76 134 L124 134 Q132 134 132 140 L132 222 L68 222 Z" fill={WHITE} />
           <path d="M68 140 Q68 134 76 134 L92 134 L96 226 L68 226 Z" fill={c} />
           <path d="M132 140 Q132 134 124 134 L108 134 L104 226 L132 226 Z" fill={c} />

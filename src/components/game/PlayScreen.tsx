@@ -12,9 +12,9 @@ import type { LevelDef, RoundState, ThrowInput, ThrowResult } from "@/game/types
 import { getLocal, loadRoundInputs, recordResult, saveRoundInputs, updateLocal, useLocal } from "@/lib/local";
 import { sfx } from "@/lib/sound";
 import { useIsClient } from "@/lib/useIsClient";
-import { toggleSound } from "@/components/AccountProvider";
+import { toggleMoveControl, toggleSound } from "@/components/AccountProvider";
 import { useT } from "@/i18n/provider";
-import { errorText, levelHint, levelSubtitle, tipText } from "@/i18n/game";
+import { errorText, levelHint, levelSubtitle, levelTitle, sideName, tipText } from "@/i18n/game";
 
 export interface PlayScreenProps {
   level: LevelDef;
@@ -68,6 +68,8 @@ function PlayScreenInner(props: PlayScreenProps) {
   const [showResult, setShowResult] = useState(false);
   const [submit, setSubmit] = useState<SubmitState>({ status: "idle" });
   const [isRecord, setIsRecord] = useState(false);
+  const [runId, setRunId] = useState(0);
+  const moveControl = local.settings.moveControl ?? "buttons";
 
   const tutorial = level.id === TUTORIAL_ID && !local.settings.tutorialDone;
 
@@ -132,6 +134,8 @@ function PlayScreenInner(props: PlayScreenProps) {
   );
 
   const restart = () => {
+    // Новый ключ пересоздаёт поле — даже если сақа ещё летит.
+    setRunId((n) => n + 1);
     saveRoundInputs(roundKey, []);
     setRound(initRound(level));
     setInputs([]);
@@ -154,16 +158,34 @@ function PlayScreenInner(props: PlayScreenProps) {
   const hint = props.hint ?? levelHint(level, t);
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-56px)] w-full max-w-[560px] flex-col px-3 pb-3">
-      {/* Верхняя панель раунда */}
+    <div className="mx-auto flex h-[calc(100dvh-56px)] w-full max-w-[560px] flex-col px-3 pb-3 lg:max-w-6xl lg:flex-row-reverse lg:gap-6 lg:pt-3">
+      {/* Панель раунда: на телефоне — над полем, на ПК — справа от большого поля */}
+      <aside className="flex flex-col lg:w-[340px] lg:shrink-0">
       <div className="flex items-center gap-3 py-2">
         <Link href={backHref} className="btn btn-ghost h-10 w-10 !p-0" aria-label={t("common.back")}>
           ←
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="truncate font-display text-[15px] font-bold leading-tight">{level.title}</div>
+          <div className="truncate font-display text-[15px] font-bold leading-tight">{levelTitle(level, t)}</div>
           <div className="truncate text-xs text-muted">{levelSubtitle(level, t, { day: dayKey, by: props.challenge?.by })}</div>
         </div>
+        <button
+          className="btn btn-ghost h-10 w-10 !p-0 text-lg"
+          onClick={restart}
+          disabled={round.throwsUsed === 0 && !showResult}
+          aria-label={t("play.restart")}
+          title={t("play.restart")}
+        >
+          ↺
+        </button>
+        <button
+          className="btn btn-ghost h-10 w-10 !p-0 text-[11px] tracking-tighter"
+          onClick={toggleMoveControl}
+          aria-label={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
+          title={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
+        >
+          {moveControl === "slider" ? "◀▶" : "━●━"}
+        </button>
         <button
           className="btn btn-ghost h-10 w-10 !p-0"
           onClick={toggleSound}
@@ -196,7 +218,7 @@ function PlayScreenInner(props: PlayScreenProps) {
             {last && last.knockedIds.length > 0 && (
               <b className="mr-1 text-gold">
                 +{last.knockedIds.length + last.comboBonus}
-                {last.sides.length > 0 && ` · ${last.sides.join(", ")}`}
+                {last.sides.length > 0 && ` · ${last.sides.map((x) => sideName(x, t)).join(", ")}`}
               </b>
             )}
             {tipText(tip, t)}
@@ -213,9 +235,12 @@ function PlayScreenInner(props: PlayScreenProps) {
           </Message>
         )}
       </div>
+      </aside>
 
       <div className="relative min-h-0 flex-1">
         <GameCanvas
+          key={runId}
+          moveControl={moveControl}
           level={level}
           asyks={round.asyks}
           disabled={round.status !== "playing"}

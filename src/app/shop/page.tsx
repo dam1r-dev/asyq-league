@@ -9,7 +9,7 @@ import type { AvatarConfig } from "@/avatar/config";
 import { CATALOG, getItem, type ShopItem } from "@/lib/catalog";
 import { LEVELS } from "@/game/levels";
 import { useT } from "@/i18n/provider";
-import { errorText } from "@/i18n/game";
+import { errorText, itemName } from "@/i18n/game";
 
 const SECTIONS: { kind: ShopItem["kind"]; title: string; text: string }[] = [
   { kind: "outfit", title: "shop.outfit", text: "shop.outfitText" },
@@ -239,7 +239,7 @@ function PremiumCard({ busy, onBuy }: { busy: boolean; onBuy: () => void }) {
 }
 
 function displayName(item: ShopItem, t: ReturnType<typeof useT>) {
-  return item.kind === "color" ? t(`color.${item.id}`) : item.name;
+  return itemName(item, t);
 }
 
 function withPart(a: AvatarConfig, item: ShopItem): AvatarConfig {

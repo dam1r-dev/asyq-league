@@ -174,3 +174,11 @@ export function toggleSound() {
   updateLocal((d) => ({ ...d, settings: { ...d.settings, sound: next } }));
   setSoundEnabled(next);
 }
+
+/** Управление сақой: стрелки ◀ ▶ или ползунок. */
+export function toggleMoveControl() {
+  updateLocal((d) => ({
+    ...d,
+    settings: { ...d.settings, moveControl: d.settings.moveControl === "slider" ? "buttons" : "slider" },
+  }));
+}

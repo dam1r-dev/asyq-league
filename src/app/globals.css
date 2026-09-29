@@ -234,3 +234,42 @@ body {
     animation: none;
   }
 }
+
+/* Ползунок положения сақа на линии броска */
+.asyq-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  touch-action: none;
+}
+.asyq-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(244, 239, 230, 0.35);
+}
+.asyq-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(244, 239, 230, 0.35);
+}
+.asyq-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid #fff8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.asyq-range::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 3px solid #fff8e8;
+}
+.asyq-range:disabled {
+  opacity: 0.5;
+}

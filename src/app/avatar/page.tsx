@@ -9,6 +9,8 @@ import {
   COLORS,
   EYE_COLORS,
   HAIR_COLORS,
+  GENDERS,
+  genderPreset,
   HAIR_STYLES,
   HATS,
   OUTFITS,
@@ -19,7 +21,7 @@ import {
 } from "@/avatar/config";
 import { getItem, isFree } from "@/lib/catalog";
 import { useT } from "@/i18n/provider";
-import { errorText } from "@/i18n/game";
+import { errorText, itemName } from "@/i18n/game";
 import { LEVELS } from "@/game/levels";
 
 export default function AvatarPage() {
@@ -81,6 +83,23 @@ export default function AvatarPage() {
         </div>
 
         <div className="grid gap-4">
+          <Section title={t("avatar.gender")}>
+            <div className="grid grid-cols-2 gap-2">
+              {GENDERS.map((g) => (
+                <button
+                  key={g}
+                  onClick={() => set(genderPreset(g))}
+                  aria-pressed={a.gender === g}
+                  className={`flex items-center gap-3 rounded-xl border p-2 text-left text-sm font-semibold ${
+                    a.gender === g ? "border-gold bg-surface-2" : "border-line"
+                  }`}
+                >
+                  <Avatar config={{ ...a, ...genderPreset(g), hat: "hat-none" }} variant="head" className="h-12 w-12 shrink-0" />
+                  {g === "f" ? t("avatar.girl") : t("avatar.boy")}
+                </button>
+              ))}
+            </div>
+          </Section>
           <Section title={t("avatar.skin")}>
             <Swatches colors={SKIN_TONES} value={a.skin} onChange={(skin) => set({ skin })} />
           </Section>
@@ -186,7 +205,7 @@ export default function AvatarPage() {
               <div className="flex-1 text-sm">
                 {missing.length > 0 && (
                   <span className={coins >= missingCost && starsOk ? "text-muted" : "text-bad"}>
-                    {missing.map((id) => getItem(id)?.name ?? id).join(", ")}:{" "}
+                    {missing.map((id) => (getItem(id) ? itemName(getItem(id)!, t) : id)).join(", ")}:{" "}
                     {!starsOk
                       ? `${t("shop.premiumReq", { n: starsNeeded })} (${t("shop.premiumHave", { n: stars })})`
                       : coins >= missingCost
@@ -250,6 +269,7 @@ function PartButton({
   children: React.ReactNode;
 }) {
   const item = getItem(id);
+  const t = useT();
   return (
     <button
       onClick={onClick}
@@ -258,7 +278,7 @@ function PartButton({
       }`}
     >
       {children}
-      <span className="mt-1 text-[11px] leading-tight font-semibold">{item?.name}</span>
+      <span className="mt-1 text-[11px] leading-tight font-semibold">{item ? itemName(item, t) : ""}</span>
       {!owned && !isFree(id) && <span className="text-[11px] text-muted">🔒 {item?.price} 🪙</span>}
     </button>
   );

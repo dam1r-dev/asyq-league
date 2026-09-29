@@ -8,7 +8,7 @@ import { ALL_LEVELS, getLevel, LEVELS } from "@/game/levels";
 import { getItem } from "@/lib/catalog";
 import { UNIVERSITIES } from "@/lib/universities";
 import { useI18n } from "@/i18n/provider";
-import { levelSubtitle } from "@/i18n/game";
+import { itemName, levelSubtitle, levelTitle } from "@/i18n/game";
 import { LANG_LOCALE } from "@/i18n/config";
 import Avatar from "@/avatar/Avatar";
 
@@ -129,7 +129,7 @@ export default function ProfilePage() {
         <div className="flex-1 text-sm">
           <div className="font-semibold">{t("profile.gear")}</div>
           <div className="text-muted">
-            {getItem(me.saqaSkin)?.name} · {getItem(me.fieldSkin)?.name}
+            {itemName(getItem(me.saqaSkin)!, t)} · {itemName(getItem(me.fieldSkin)!, t)}
           </div>
         </div>
         <Link href="/shop" className="btn btn-ghost !py-2 text-sm">
@@ -141,7 +141,7 @@ export default function ProfilePage() {
         <Link href={`/play/${next.id}`} className="card mt-4 flex items-center gap-3 border-gold/40 p-4">
           <div className="flex-1">
             <div className="text-xs text-muted">{t("profile.nextGoal")}</div>
-            <div className="font-display font-bold">{next.title}</div>
+            <div className="font-display font-bold">{levelTitle(next, t)}</div>
             <div className="text-sm text-muted">{levelSubtitle(next, t)}</div>
           </div>
           <span className="btn btn-primary !py-2 text-sm">{t("common.play")}</span>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {ALL_LEVELS.filter((l) => me.progress[l.id]).map((l) => (
           <Link key={l.id} href={`/play/${l.id}`} className="card flex items-center justify-between px-4 py-2.5 text-sm hover:border-gold/40">
-            <span className="font-semibold">{l.title}</span>
+            <span className="font-semibold">{levelTitle(l, t)}</span>
             <span className="text-muted">
               {"⭐".repeat(me.progress[l.id].stars)} <b className="ml-1 text-gold">{me.progress[l.id].best}</b>
             </span>
@@ -170,7 +170,7 @@ export default function ProfilePage() {
             <span className={`h-2 w-2 shrink-0 rounded-full ${a.won ? "bg-good" : "bg-bad"}`} />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">
-                {a.kind === "daily" ? t("profile.dailyRow", { day: a.dayKey ?? "" }) : (getLevel(a.levelId)?.title ?? a.levelId)}
+                {a.kind === "daily" ? t("profile.dailyRow", { day: a.dayKey ?? "" }) : (getLevel(a.levelId) ? levelTitle(getLevel(a.levelId)!, t) : a.levelId)}
               </div>
               <div className="text-xs text-muted">
                 {new Date(a.createdAt).toLocaleString(LANG_LOCALE[lang], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} ·{" "}

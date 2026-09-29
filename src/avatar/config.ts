@@ -40,7 +40,12 @@ export const COLOR_HEX: Record<(typeof COLORS)[number], string> = {
   "color-gold": "#e0a72b",
 };
 
+export const GENDERS = ["m", "f"] as const;
+export type Gender = (typeof GENDERS)[number];
+
 export const avatarSchema = z.object({
+  /** Старые сохранения без пола считаются мальчиком. */
+  gender: z.enum(GENDERS).default("m"),
   skin: z.number().int().min(0).max(SKIN_TONES.length - 1),
   eyes: z.number().int().min(0).max(EYE_COLORS.length - 1),
   hair: z.enum(HAIR_STYLES),
@@ -54,6 +59,7 @@ export const avatarSchema = z.object({
 export type AvatarConfig = z.infer<typeof avatarSchema>;
 
 export const DEFAULT_AVATAR: AvatarConfig = {
+  gender: "m",
   skin: 1,
   eyes: 0,
   hair: "short",
@@ -84,4 +90,9 @@ export function isFullSet(a: AvatarConfig) {
 /** Платные части внешности, которые нужно проверить по покупкам. */
 export function paidParts(a: AvatarConfig) {
   return isFullSet(a) ? [a.outfit] : [a.outfit, a.hat, a.color];
+}
+
+/** При выборе пола сразу подставляем типичную внешность — дальше её можно менять. */
+export function genderPreset(g: Gender): Partial<AvatarConfig> {
+  return g === "f" ? { gender: "f", hair: "braids", mustache: false } : { gender: "m", hair: "short" };
 }

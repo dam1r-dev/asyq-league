@@ -38,6 +38,8 @@ export interface LocalData {
     tutorialDone: boolean;
     /** Персонаж гостя (только бесплатные части). */
     avatar: AvatarConfig;
+    /** Как двигать сақа вдоль линии. */
+    moveControl?: "buttons" | "slider";
   };
 }
 

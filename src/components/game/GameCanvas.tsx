@@ -18,6 +18,13 @@ import { initRound, normalizeInput, startThrow } from "@/game/round";
 import type { AsykState, LevelDef, ThrowInput } from "@/game/types";
 import { useT } from "@/i18n/provider";
 
+/**
+ * Видимая часть поля: пустые полосы сверху и снизу обрезаны, чтобы кон
+ * и асыки были крупнее (особенно на широких экранах).
+ */
+const VIEW_Y0 = 60;
+const VIEW_H = 640;
+
 /** Сколько экранных «игровых единиц» нужно оттянуть для 100% силы. */
 const MAX_PULL = 150;
 const MIN_PULL = 12;
@@ -32,6 +39,8 @@ interface Props {
   /** Бросок сыгран до конца (все тела остановились). */
   onThrowEnd: (input: ThrowInput) => void;
   onThrowStart?: () => void;
+  /** Как двигать сақа вдоль линии: стрелки ◀ ▶ или ползунок. */
+  moveControl?: "buttons" | "slider";
   /** Заголовок/подпись поверх поля, например «Ход: Айдос». */
   overlay?: React.ReactNode;
 }
@@ -64,6 +73,7 @@ export default function GameCanvas({
   onThrowEnd,
   onThrowStart,
   overlay,
+  moveControl = "buttons",
 }: Props) {
   const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -106,8 +116,8 @@ export default function GameCanvas({
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      const scale = Math.min(w / WORLD_W, h / WORLD_H);
-      setSize({ w: WORLD_W * scale, h: WORLD_H * scale, scale });
+      const scale = Math.min(w / WORLD_W, h / VIEW_H);
+      setSize({ w: WORLD_W * scale, h: VIEW_H * scale, scale });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -125,7 +135,7 @@ export default function GameCanvas({
       const rect = canvasRef.current!.getBoundingClientRect();
       return {
         x: ((clientX - rect.left) / rect.width) * WORLD_W,
-        y: ((clientY - rect.top) / rect.height) * WORLD_H,
+        y: ((clientY - rect.top) / rect.height) * VIEW_H + VIEW_Y0,
       };
     },
     [],
@@ -232,7 +242,7 @@ export default function GameCanvas({
       if (s.phase === "fly" && s.world) {
         const w = s.world;
         const onScreen = w.bodies.some(
-          (b) => (b.vx !== 0 || b.vy !== 0) && b.x > -20 && b.x < WORLD_W + 20 && b.y > -20 && b.y < WORLD_H + 20,
+          (b) => (b.vx !== 0 || b.vy !== 0) && b.x > -20 && b.x < WORLD_W + 20 && b.y > VIEW_Y0 - 20 && b.y < VIEW_Y0 + VIEW_H + 20,
         );
         const timeScale = s.slowmo > 0 ? 0.3 : onScreen ? 1 : 4;
         s.slowmo = Math.max(0, s.slowmo - dtReal);
@@ -275,7 +285,7 @@ export default function GameCanvas({
               s.slowmo = s.knockedLive.size === 1 ? 0.45 : 0.2;
               s.popups.push({
                 x: Math.max(30, Math.min(WORLD_W - 30, b.x)),
-                y: Math.max(40, Math.min(WORLD_H - 40, b.y)),
+                y: Math.max(VIEW_Y0 + 40, Math.min(VIEW_Y0 + VIEW_H - 40, b.y)),
                 text: s.knockedLive.size > 1 ? `+1 ×${s.knockedLive.size}` : "+1",
                 life: 0,
                 color: "#f2b441",
@@ -322,7 +332,7 @@ export default function GameCanvas({
         oy = (Math.random() - 0.5) * s.shake;
         s.shake *= Math.pow(0.02, dtReal);
       }
-      ctx.setTransform(k, 0, 0, k, ox * k, oy * k);
+      ctx.setTransform(k, 0, 0, k, ox * k, (oy - VIEW_Y0) * k);
       if (s.field) ctx.drawImage(s.field, 0, 0, WORLD_W, WORLD_H);
 
       for (const stone of lv.stones) drawStone(ctx, stone);
@@ -504,33 +514,49 @@ export default function GameCanvas({
         {showHint && canMove && !aiming && (
           <div
             className="pointer-events-none absolute"
-            style={{ left: (sx / WORLD_W) * size.w - 18, top: (saqaStartY(level.lineY) / WORLD_H) * size.h - 18 }}
+            style={{ left: (sx / WORLD_W) * size.w - 18, top: ((saqaStartY(level.lineY) - VIEW_Y0) / VIEW_H) * size.h - 18 }}
           >
             <div className="hint-drag text-4xl drop-shadow-lg">👆</div>
           </div>
         )}
         <div
-          className="pointer-events-none absolute inset-x-0 flex justify-between px-3"
-          style={{ top: (saqaStartY(level.lineY) / WORLD_H) * size.h + 34 }}
+          className="pointer-events-none absolute inset-x-0 flex items-center justify-between gap-3 px-3"
+          style={{ top: ((saqaStartY(level.lineY) + 26 - VIEW_Y0) / VIEW_H) * size.h }}
         >
-          <button
-            type="button"
-            aria-label={t("canvas.left")}
-            className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
-            disabled={!canMove}
-            onClick={() => nudge(-12)}
-          >
-            ◀
-          </button>
-          <button
-            type="button"
-            aria-label={t("canvas.right")}
-            className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
-            disabled={!canMove}
-            onClick={() => nudge(12)}
-          >
-            ▶
-          </button>
+          {moveControl === "slider" ? (
+            <input
+              type="range"
+              aria-label={t("canvas.slider")}
+              className="asyq-range pointer-events-auto w-full"
+              min={level.kon.x - THROW_SPREAD}
+              max={level.kon.x + THROW_SPREAD}
+              step={1}
+              value={sx}
+              disabled={!canMove}
+              onChange={(e) => setSx(Number(e.target.value))}
+            />
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label={t("canvas.left")}
+                className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
+                disabled={!canMove}
+                onClick={() => nudge(-12)}
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                aria-label={t("canvas.right")}
+                className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
+                disabled={!canMove}
+                onClick={() => nudge(12)}
+              >
+                ▶
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
