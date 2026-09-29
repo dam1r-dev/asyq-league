@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { fail } from "@/lib/api";
+import { fail, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export const GET = safe(async () => {
   const user = await getSessionUser();
   if (!user) return fail("Нужно войти", 401);
   const [recent, totals] = await Promise.all([
@@ -29,4 +29,4 @@ export async function GET() {
       throws: totals._sum.throwsUsed ?? 0,
     },
   });
-}
+});

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { fail, parseBody } from "@/lib/api";
+import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { ownedItems } from "@/lib/me";
 import { prisma } from "@/lib/prisma";
@@ -14,7 +14,7 @@ const schema = z.object({
   levels: z.record(z.string().max(40), z.array(inputSchema).min(1).max(20)),
 });
 
-export async function POST(req: Request) {
+export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("Нужно войти", 401);
   const body = await parseBody(req, schema);
@@ -50,4 +50,4 @@ export async function POST(req: Request) {
     imported++;
   }
   return NextResponse.json({ imported });
-}
+});

@@ -14,3 +14,20 @@ export async function parseBody<T>(req: Request, schema: ZodType<T>): Promise<T 
     return null;
   }
 }
+
+/**
+ * Оборачивает обработчик: любая неожиданная ошибка (нет базы, не задан
+ * AUTH_SECRET) превращается в понятный JSON-ответ, а не в пустой 500.
+ */
+export function safe<A extends unknown[]>(fn: (...args: A) => Promise<Response>) {
+  return async (...args: A): Promise<Response> => {
+    try {
+      return await fn(...args);
+    } catch (e) {
+      console.error(e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("AUTH_SECRET")) return fail("Сервер не настроен: не задан AUTH_SECRET", 503);
+      return fail("База данных недоступна. Попробуйте позже — играть можно и без входа.", 503);
+    }
+  };
+}

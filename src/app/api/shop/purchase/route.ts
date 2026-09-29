@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { fail, parseBody } from "@/lib/api";
+import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { getItem } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
@@ -15,7 +15,7 @@ const schema = z.object({
   card: z.string().max(30),
 });
 
-export async function POST(req: Request) {
+export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("Нужно войти", 401);
   const body = await parseBody(req, schema);
@@ -35,4 +35,4 @@ export async function POST(req: Request) {
   if (item.kind === "saqa") await prisma.user.update({ where: { id: user.id }, data: { saqaSkin: item.id } });
   if (item.kind === "field") await prisma.user.update({ where: { id: user.id }, data: { fieldSkin: item.id } });
   return NextResponse.json({ ok: true, itemId: item.id });
-}
+});

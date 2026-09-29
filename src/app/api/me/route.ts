@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { fail, parseBody } from "@/lib/api";
+import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { getItem, isFree } from "@/lib/catalog";
 import { serializeMe, ownedItems } from "@/lib/me";
@@ -24,7 +24,7 @@ const patchSchema = z.object({
   fieldSkin: z.string().max(40).optional(),
 });
 
-export async function PATCH(req: Request) {
+export const PATCH = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("Нужно войти", 401);
   const body = await parseBody(req, patchSchema);
@@ -44,4 +44,4 @@ export async function PATCH(req: Request) {
 
   const updated = await prisma.user.update({ where: { id: user.id }, data: body });
   return NextResponse.json({ me: await serializeMe(updated) });
-}
+});

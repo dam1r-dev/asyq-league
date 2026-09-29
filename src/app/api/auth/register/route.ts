@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { fail } from "@/lib/api";
+import { fail, safe } from "@/lib/api";
 import { createSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UNIVERSITIES } from "@/lib/universities";
@@ -17,7 +17,7 @@ const schema = z.object({
   university: z.enum(UNIVERSITIES).optional(),
 });
 
-export async function POST(req: Request) {
+export const POST = safe(async (req: Request) => {
   const raw = await req.json().catch(() => null);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Проверьте поля");
@@ -29,5 +29,4 @@ export async function POST(req: Request) {
   });
   await createSession(user.id);
   return NextResponse.json({ ok: true });
-}
-
+});
