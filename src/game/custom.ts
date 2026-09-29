@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ASYK_R, DEFAULT_KON, DEFAULT_LINE_Y } from "./constants";
-import type { LevelDef, Point, Stone } from "./types";
+import type { Kon, LevelDef, Point, Stone } from "./types";
 
 /**
  * Авторские испытания из редактора. Вся расстановка упаковывается прямо в
@@ -20,6 +20,9 @@ const schema = z.object({
   by: z.string().trim().max(24).optional(),
   sc: z.number().int().min(0).max(999).optional(),
   th: z.number().int().min(0).max(15).optional(),
+  /** Необязательный размер кона и линия броска (для испытаний из кампании). */
+  k: z.tuple([z.number().min(100).max(300), z.number().min(120).max(320), z.number().min(80).max(170)]).optional(),
+  l: z.number().min(480).max(640).optional(),
 });
 
 export type CustomChallenge = z.infer<typeof schema>;
@@ -50,17 +53,21 @@ export function decodeChallenge(code: string): CustomChallenge | null {
     // Всё должно лежать внутри кона и не налезать друг на друга.
     const asyks = c.a.map(([x, y]) => ({ x, y }));
     const stones = c.s.map(([x, y, r]) => ({ x, y, r }));
-    if (!validLayout(asyks, stones)) return null;
+    if (!validLayout(asyks, stones, konOf(c))) return null;
     return c;
   } catch {
     return null;
   }
 }
 
-export function validLayout(asyks: Point[], stones: Stone[]) {
+function konOf(c: CustomChallenge): Kon {
+  return c.k ? { x: c.k[0], y: c.k[1], r: c.k[2] } : DEFAULT_KON;
+}
+
+export function validLayout(asyks: Point[], stones: Stone[], kon: Kon = DEFAULT_KON) {
   const d = (a: Point, b: Point) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-  for (const a of asyks) if (d(a, DEFAULT_KON) + ASYK_R > DEFAULT_KON.r) return false;
-  for (const s of stones) if (d(s, DEFAULT_KON) + s.r > DEFAULT_KON.r + 40) return false;
+  for (const a of asyks) if (d(a, kon) + ASYK_R > kon.r) return false;
+  for (const s of stones) if (d(s, kon) + s.r > kon.r + 40) return false;
   const all = [...asyks.map((p) => ({ ...p, r: ASYK_R })), ...stones];
   for (let i = 0; i < all.length; i++)
     for (let j = i + 1; j < all.length; j++)
@@ -75,12 +82,30 @@ export function challengeToLevel(c: CustomChallenge): LevelDef {
     id: "custom",
     title: c.t || "Испытание от друга",
     subtitle: c.by ? `Автор: ${c.by}` : "Авторская расстановка",
-    kon: DEFAULT_KON,
-    lineY: DEFAULT_LINE_Y,
+    kon: konOf(c),
+    lineY: c.l ?? DEFAULT_LINE_Y,
     asyks: c.a.map(([x, y]) => ({ x, y })),
     stones: c.s.map(([x, y, r]) => ({ x, y, r })),
     throws: c.n,
     par3,
     par2: Math.min(c.n, par3 + 2),
+  };
+}
+
+/** Превращает любой уровень в испытание для друга, с результатом отправителя. */
+export function levelToChallenge(
+  level: LevelDef,
+  extra: { by?: string; sc?: number; th?: number } = {},
+): CustomChallenge {
+  const isDefault =
+    level.kon.x === DEFAULT_KON.x && level.kon.y === DEFAULT_KON.y && level.kon.r === DEFAULT_KON.r;
+  return {
+    t: level.title.slice(0, 40),
+    a: level.asyks.map((p) => [p.x, p.y]),
+    s: level.stones.map((s) => [s.x, s.y, s.r]),
+    n: level.throws,
+    ...(isDefault ? {} : { k: [level.kon.x, level.kon.y, level.kon.r] as [number, number, number] }),
+    ...(level.lineY !== DEFAULT_LINE_Y ? { l: level.lineY } : {}),
+    ...extra,
   };
 }
