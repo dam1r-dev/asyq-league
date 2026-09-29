@@ -1,0 +1,182 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAccount } from "@/components/AccountProvider";
+import { ALL_LEVELS, getLevel, LEVELS } from "@/game/levels";
+import { getItem } from "@/lib/catalog";
+import { UNIVERSITIES } from "@/lib/universities";
+
+interface HistoryData {
+  recent: {
+    id: string;
+    kind: string;
+    levelId: string;
+    dayKey: string | null;
+    score: number;
+    stars: number;
+    won: boolean;
+    throwsUsed: number;
+    knocked: number;
+    createdAt: string;
+  }[];
+  totals: { rounds: number; wins: number; knocked: number; throws: number };
+}
+
+export default function ProfilePage() {
+  const router = useRouter();
+  const { me, loading, refresh } = useAccount();
+  const [history, setHistory] = useState<HistoryData | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    fetch("/api/history")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setHistory(d));
+    return () => {
+      alive = false;
+    };
+  }, [me]);
+
+  if (loading) return <div className="p-8 text-center text-muted">Загрузка…</div>;
+  if (!me)
+    return (
+      <div className="mx-auto mt-16 max-w-sm px-4 text-center">
+        <div className="text-5xl">🎯</div>
+        <h1 className="mt-4 font-display text-xl font-bold">Профиль игрока</h1>
+        <p className="mt-2 text-sm text-muted">Войди, чтобы видеть рекорды, историю бросков и играть за свой университет.</p>
+        <Link href="/auth" className="btn btn-primary mt-6">
+          Войти или создать аккаунт
+        </Link>
+      </div>
+    );
+
+  const stars = LEVELS.reduce((s, l) => s + (me.progress[l.id]?.stars ?? 0), 0);
+  const cleared = LEVELS.filter((l) => (me.progress[l.id]?.stars ?? 0) > 0).length;
+  const next = LEVELS.find((l) => !me.progress[l.id]);
+
+  const updateUniversity = async (university: string) => {
+    setSaving(true);
+    await fetch("/api/me", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ university: university || null }),
+    });
+    await refresh();
+    setSaving(false);
+  };
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    await refresh();
+    router.push("/");
+  };
+
+  const t = history?.totals;
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold">{me.displayName}</h1>
+          <p className="text-sm text-muted">@{me.username}</p>
+        </div>
+        <button className="btn btn-ghost !py-2 text-sm" onClick={logout}>
+          Выйти
+        </button>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Tile label="Звёзды" value={`${stars}/36`} accent />
+        <Tile label="Пройдено" value={`${cleared}/12`} />
+        <Tile label="Выбито асыков" value={t ? t.knocked : "…"} />
+        <Tile label="Асыков за бросок" value={t && t.throws ? (t.knocked / t.throws).toFixed(2) : "…"} />
+      </div>
+
+      <div className="card mt-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <div className="font-semibold">Университет</div>
+          <div className="text-sm text-muted">Твои результаты в испытании дня идут в копилку вуза в лиге.</div>
+        </div>
+        <select className="input sm:w-56" value={me.university ?? ""} disabled={saving} onChange={(e) => updateUniversity(e.target.value)}>
+          <option value="">Не выбран</option>
+          {UNIVERSITIES.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="card mt-4 flex items-center gap-3 p-4">
+        <div className="flex-1 text-sm">
+          <div className="font-semibold">Снаряжение</div>
+          <div className="text-muted">
+            {getItem(me.saqaSkin)?.name} · {getItem(me.fieldSkin)?.name}
+          </div>
+        </div>
+        <Link href="/shop" className="btn btn-ghost !py-2 text-sm">
+          Сменить
+        </Link>
+      </div>
+
+      {next && (
+        <Link href={`/play/${next.id}`} className="card mt-4 flex items-center gap-3 border-gold/40 p-4">
+          <div className="flex-1">
+            <div className="text-xs text-muted">Следующая цель</div>
+            <div className="font-display font-bold">{next.title}</div>
+            <div className="text-sm text-muted">{next.subtitle}</div>
+          </div>
+          <span className="btn btn-primary !py-2 text-sm">Играть</span>
+        </Link>
+      )}
+
+      <h2 className="mt-8 font-display text-lg font-bold">Личные рекорды</h2>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {ALL_LEVELS.filter((l) => me.progress[l.id]).map((l) => (
+          <Link key={l.id} href={`/play/${l.id}`} className="card flex items-center justify-between px-4 py-2.5 text-sm hover:border-gold/40">
+            <span className="font-semibold">{l.title}</span>
+            <span className="text-muted">
+              {"⭐".repeat(me.progress[l.id].stars)} <b className="ml-1 text-gold">{me.progress[l.id].best}</b>
+            </span>
+          </Link>
+        ))}
+        {Object.keys(me.progress).length === 0 && <p className="text-sm text-muted">Пока нет пройденных испытаний.</p>}
+      </div>
+
+      <h2 className="mt-8 font-display text-lg font-bold">История раундов</h2>
+      <div className="card mt-3 divide-y divide-line">
+        {!history && <p className="p-4 text-sm text-muted">Загрузка…</p>}
+        {history?.recent.length === 0 && <p className="p-4 text-sm text-muted">Сыграй первый раунд — он появится здесь.</p>}
+        {history?.recent.map((a) => (
+          <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${a.won ? "bg-good" : "bg-bad"}`} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-semibold">
+                {a.kind === "daily" ? `Күн сынағы · ${a.dayKey}` : (getLevel(a.levelId)?.title ?? a.levelId)}
+              </div>
+              <div className="text-xs text-muted">
+                {new Date(a.createdAt).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} ·
+                выбито {a.knocked} за {a.throwsUsed} бр.
+              </div>
+            </div>
+            <span className="text-xs">{"⭐".repeat(a.stars)}</span>
+            <b className="w-8 text-right text-gold">{a.score}</b>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Tile({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className="card p-3">
+      <div className={`font-display text-xl font-bold ${accent ? "text-gold" : ""}`}>{value}</div>
+      <div className="text-xs text-muted">{label}</div>
+    </div>
+  );
+}

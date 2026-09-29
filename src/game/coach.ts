@@ -41,7 +41,7 @@ export function roundStats(state: RoundState): RoundStats {
   else if (combos === 0 && state.level.asyks.length > 4)
     advice = "Встань сбоку на линии (кнопки ◀ ▶) и бей вдоль ряда — так выбивают по 2–3 асыка.";
   else if (state.status === "won" && state.stars < 3)
-    advice = `Для трёх звёзд уложись в ${state.level.par3} бросков.`;
+    advice = `Для трёх звёзд уложись в ${state.level.par3} ${state.level.par3 < 5 ? "броска" : "бросков"}.`;
   else advice = "Отличная серия! Попробуй испытание дня и сравни себя с другими.";
 
   return { throws: h.length, hitRate, avgPower, penalties, combos, advice };

@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  passwordHash String
+  displayName  String
+  university   String?
+  saqaSkin     String     @default("saqa-classic")
+  fieldSkin    String     @default("field-aula")
+  createdAt    DateTime   @default(now())
+  attempts     Attempt[]
+  purchases    Purchase[]
+}
+
+/// Один сыгранный раунд. Храним броски, а очки пересчитывает сервер.
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "level" | "daily"
+  kind       String
+  levelId    String
+  /// Дата испытания дня (YYYY-MM-DD по Алматы), для обычных уровней пусто.
+  dayKey     String?
+  score      Int
+  stars      Int
+  won        Boolean
+  throwsUsed Int
+  knocked    Int
+  inputs     String
+  createdAt  DateTime @default(now())
+
+  @@index([userId, levelId])
+  @@index([dayKey, score])
+  @@index([createdAt])
+}
+
+/// Покупка в тестовом режиме: реальных денег нет, но доступ выдаётся по-настоящему.
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String
+  priceKzt  Int
+  testMode  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}
