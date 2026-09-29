@@ -26,8 +26,8 @@ export function safe<A extends unknown[]>(fn: (...args: A) => Promise<Response>)
     } catch (e) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("AUTH_SECRET")) return fail("Сервер не настроен: не задан AUTH_SECRET", 503);
-      return fail("База данных недоступна. Попробуйте позже — играть можно и без входа.", 503);
+      if (msg.includes("AUTH_SECRET")) return fail("noSecret", 503);
+      return fail("noDb", 503);
     }
   };
 }

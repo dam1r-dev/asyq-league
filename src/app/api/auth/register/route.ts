@@ -11,19 +11,19 @@ const schema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .regex(/^[a-z0-9_]{3,20}$/, "Логин: 3–20 символов, латиница, цифры и _"),
-  password: z.string().min(6, "Пароль — минимум 6 символов").max(100),
-  displayName: z.string().trim().min(2, "Имя — минимум 2 символа").max(20),
+    .regex(/^[a-z0-9_]{3,20}$/, "badUsername"),
+  password: z.string().min(6, "shortPassword").max(100),
+  displayName: z.string().trim().min(2, "shortName").max(20),
   university: z.enum(UNIVERSITIES).optional(),
 });
 
 export const POST = safe(async (req: Request) => {
   const raw = await req.json().catch(() => null);
   const parsed = schema.safeParse(raw);
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Проверьте поля");
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "checkFields");
   const { username, password, displayName, university } = parsed.data;
 
-  if (await prisma.user.findUnique({ where: { username } })) return fail("Такой логин уже занят", 409);
+  if (await prisma.user.findUnique({ where: { username } })) return fail("usernameTaken", 409);
   const user = await prisma.user.create({
     data: { username, displayName, university, passwordHash: await bcrypt.hash(password, 10) },
   });

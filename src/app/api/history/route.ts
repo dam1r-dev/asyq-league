@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export const GET = safe(async () => {
   const user = await getSessionUser();
-  if (!user) return fail("Нужно войти", 401);
+  if (!user) return fail("needLogin", 401);
   const [recent, totals] = await Promise.all([
     prisma.attempt.findMany({
       where: { userId: user.id },

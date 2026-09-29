@@ -5,10 +5,13 @@ import { useAccount } from "@/components/AccountProvider";
 import { LEGEND_LEVELS, LEVELS } from "@/game/levels";
 import type { LevelDef } from "@/game/types";
 import { useLocal } from "@/lib/local";
+import { useT } from "@/i18n/provider";
+import { levelSubtitle } from "@/i18n/game";
 
 export default function LevelsPage() {
   const local = useLocal();
   const { me, owns } = useAccount();
+  const t = useT();
   const rec = (id: string) => ({
     stars: Math.max(local.levels[id]?.stars ?? 0, me?.progress[id]?.stars ?? 0),
     best: Math.max(local.levels[id]?.best ?? 0, me?.progress[id]?.best ?? 0),
@@ -20,8 +23,8 @@ export default function LevelsPage() {
     <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">Испытания</h1>
-          <p className="mt-1 text-sm text-muted">Пройди испытание, чтобы открыть следующее. Меньше бросков — больше звёзд.</p>
+          <h1 className="font-display text-2xl font-bold">{t("levelsPage.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{t("levelsPage.lead")}</p>
         </div>
         <div className="chip !text-sm">⭐ {total}/36</div>
       </div>
@@ -35,12 +38,12 @@ export default function LevelsPage() {
 
       <div className="mt-10 flex items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-bold">Дала аңыздары</h2>
-          <p className="mt-1 text-sm text-muted">Дополнительный набор испытаний. Не влияет на рейтинг и не даёт преимуществ.</p>
+          <h2 className="font-display text-xl font-bold">{t("levelsPage.packTitle")}</h2>
+          <p className="mt-1 text-sm text-muted">{t("levelsPage.packLead")}</p>
         </div>
         {!hasLegends && (
           <Link href="/shop" className="btn btn-primary shrink-0 !py-2 text-sm">
-            Открыть
+            {t("levelsPage.unlock")}
           </Link>
         )}
       </div>
@@ -68,18 +71,19 @@ function LevelCard({
   best: number;
   premium?: boolean;
 }) {
+  const t = useT();
   const body = (
     <>
       <div className="flex items-center justify-between">
         <span className="font-display text-xs font-bold text-muted">{premium ? "★" : ""}{index}</span>
-        <span className="text-sm tracking-tight" aria-label={`Звёзд: ${stars}`}>
+        <span className="text-sm tracking-tight" aria-label={t("levelsPage.stars", { n: stars })}>
           {unlocked ? [1, 2, 3].map((s) => (s <= stars ? "⭐" : "☆")).join("") : "🔒"}
         </span>
       </div>
       <LevelPreview level={level} dim={!unlocked} />
       <div className="font-display text-sm font-bold leading-tight">{level.title}</div>
-      <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted">{level.subtitle}</div>
-      {best > 0 && <div className="mt-1 text-xs text-gold">Рекорд: {best}</div>}
+      <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted">{levelSubtitle(level, t)}</div>
+      {best > 0 && <div className="mt-1 text-xs text-gold">{t("levelsPage.record", { n: best })}</div>}
     </>
   );
   if (!unlocked)

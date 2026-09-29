@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useAccount } from "@/components/AccountProvider";
 import PlayScreen from "@/components/game/PlayScreen";
 import { getLevel } from "@/game/levels";
+import { useT } from "@/i18n/provider";
 
 /** Платные испытания открываются только после (тестовой) покупки набора. */
 export default function LevelGate({ levelId, nextHref }: { levelId: string; nextHref?: string }) {
   const level = getLevel(levelId)!;
   const { owns, loading } = useAccount();
+  const t = useT();
 
   if (level.pack && !loading && !owns("pack-legends")) {
     return (
@@ -16,10 +18,10 @@ export default function LevelGate({ levelId, nextHref }: { levelId: string; next
         <div className="text-5xl">🔒</div>
         <h1 className="mt-4 font-display text-xl font-bold">{level.title}</h1>
         <p className="mt-2 text-sm text-muted">
-          Это испытание из набора «Дала аңыздары». Откройте набор в магазине (тестовый режим — без реальной оплаты).
+          {t("gate.text")}
         </p>
         <Link href="/shop" className="btn btn-primary mt-6">
-          В магазин
+          {t("gate.toShop")}
         </Link>
       </div>
     );

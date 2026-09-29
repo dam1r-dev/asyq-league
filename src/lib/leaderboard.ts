@@ -7,7 +7,7 @@ export interface Row {
   name: string;
   university: string | null;
   value: number;
-  extra?: string;
+  players?: number;
   userId?: string;
 }
 
@@ -60,7 +60,7 @@ export async function universityBoard(): Promise<Row[]> {
     totals.set(uni, t);
   }
   return [...totals.entries()]
-    .map(([uni, t]) => ({ name: uni, university: uni, value: t.points, extra: `${t.players.size} игр.` }))
+    .map(([uni, t]) => ({ name: uni, university: uni, value: t.points, players: t.players.size }))
     .sort((a, b) => b.value - a.value);
 }
 

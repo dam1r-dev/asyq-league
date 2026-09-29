@@ -16,6 +16,7 @@ import { isAtRest, saqaStartY, stepWorld, type World } from "@/game/physics";
 import { drawBone, drawStone, initialAngle, renderFieldLayer } from "@/game/render";
 import { initRound, normalizeInput, startThrow } from "@/game/round";
 import type { AsykState, LevelDef, ThrowInput } from "@/game/types";
+import { useT } from "@/i18n/provider";
 
 /** Сколько экранных «игровых единиц» нужно оттянуть для 100% силы. */
 const MAX_PULL = 150;
@@ -64,6 +65,7 @@ export default function GameCanvas({
   onThrowStart,
   overlay,
 }: Props) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0, scale: 1 });
@@ -91,9 +93,10 @@ export default function GameCanvas({
   });
 
   // Свежие пропсы для игрового цикла, который живёт вне рендера React.
-  const propsRef = useRef({ level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin });
+  const forwardLabel = t("canvas.forward");
+  const propsRef = useRef({ level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel });
   useLayoutEffect(() => {
-    propsRef.current = { level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin };
+    propsRef.current = { level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel };
   });
 
   // Подгоняем canvas под контейнер, сохраняя пропорции поля.
@@ -470,7 +473,7 @@ export default function GameCanvas({
       c.textAlign = "center";
       c.lineWidth = 4;
       c.strokeStyle = "rgba(15,10,5,0.85)";
-      const label = valid ? `${Math.round(power * 100)}%` : "бросай вперёд";
+      const label = valid ? `${Math.round(power * 100)}%` : propsRef.current.forwardLabel;
       const ly = y + 40;
       c.strokeText(label, x, ly);
       c.fillStyle = color;
@@ -494,7 +497,7 @@ export default function GameCanvas({
           onPointerMove={onPointerMove}
           onPointerUp={(e) => endAim(e, false)}
           onPointerCancel={(e) => endAim(e, true)}
-          aria-label="Игровое поле. Потяните назад и отпустите, чтобы бросить сақа."
+          aria-label={t("canvas.aria")}
           role="img"
         />
         {overlay}
@@ -512,7 +515,7 @@ export default function GameCanvas({
         >
           <button
             type="button"
-            aria-label="Сдвинуть сақа влево"
+            aria-label={t("canvas.left")}
             className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
             disabled={!canMove}
             onClick={() => nudge(-12)}
@@ -521,7 +524,7 @@ export default function GameCanvas({
           </button>
           <button
             type="button"
-            aria-label="Сдвинуть сақа вправо"
+            aria-label={t("canvas.right")}
             className="btn btn-ghost pointer-events-auto h-11 w-11 !p-0 text-lg"
             disabled={!canMove}
             onClick={() => nudge(12)}

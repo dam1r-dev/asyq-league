@@ -17,6 +17,50 @@
   --good: #7fc76a;
   --bad: #ec5a45;
   --chalk: #f4efe6;
+  --glow: #3a2a17;
+  --hover: #342a20;
+  --on-gold: #2a1a05;
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Светлая тема: «летний день» — тёплая бумага и та же охра.
+ * Включается по системной настройке или вручную (data-theme на <html>).
+ * Само игровое поле (асфальт/земля) в обеих темах одинаковое.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f7f0e4;
+    --surface: #fffaf2;
+    --surface-2: #f1e5d2;
+    --line: #e0cfb4;
+    --text: #2b1d0f;
+    --muted: #76634b;
+    --gold: #d48a14;
+    --gold-deep: #b36e08;
+    --sky: #0b8aa0;
+    --good: #3d8b2c;
+    --bad: #c63f2b;
+    --glow: #f5d9a8;
+    --hover: #eadbc3;
+    --overlay: rgba(43, 29, 15, 0.45);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f7f0e4;
+  --surface: #fffaf2;
+  --surface-2: #f1e5d2;
+  --line: #e0cfb4;
+  --text: #2b1d0f;
+  --muted: #76634b;
+  --gold: #d48a14;
+  --gold-deep: #b36e08;
+  --sky: #0b8aa0;
+  --good: #3d8b2c;
+  --bad: #c63f2b;
+  --glow: #f5d9a8;
+  --hover: #eadbc3;
+  --overlay: rgba(43, 29, 15, 0.45);
 }
 
 @theme inline {
@@ -32,6 +76,8 @@
   --color-good: var(--good);
   --color-bad: var(--bad);
   --color-chalk: var(--chalk);
+  --color-on-gold: var(--on-gold);
+  --color-overlay: var(--overlay);
   --font-sans: var(--font-onest);
   --font-display: var(--font-montserrat);
 }
@@ -40,10 +86,18 @@ html {
   background: var(--bg);
   color-scheme: dark;
 }
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) {
+    color-scheme: light;
+  }
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
 
 body {
   background:
-    radial-gradient(120% 60% at 50% -10%, #3a2a17 0%, transparent 60%),
+    radial-gradient(120% 60% at 50% -10%, var(--glow) 0%, transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: var(--font-onest), system-ui, sans-serif;
@@ -78,7 +132,7 @@ body {
 }
 .btn-primary {
   background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
-  color: #2a1a05;
+  color: var(--on-gold);
   box-shadow: 0 6px 20px -8px rgba(242, 180, 65, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn-primary:hover {
@@ -90,7 +144,7 @@ body {
   border: 1px solid var(--line);
 }
 .btn-ghost:hover {
-  background: #342a20;
+  background: var(--hover);
 }
 
 .card {

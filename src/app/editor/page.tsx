@@ -8,6 +8,7 @@ import { encodeChallenge, MAX_CUSTOM_ASYKS, MAX_CUSTOM_STONES, validLayout } fro
 import { drawBone, drawStone, initialAngle, renderFieldLayer } from "@/game/render";
 import type { LevelDef, Point, Stone } from "@/game/types";
 import { fieldLook } from "@/lib/catalog";
+import { useT } from "@/i18n/provider";
 
 type Tool = "asyk" | "stone" | "erase";
 const STONE_R = 14;
@@ -16,6 +17,7 @@ const PRESET: Point[] = Array.from({ length: 7 }, (_, i) => ({ x: 200 - 3 * 24 +
 
 export default function EditorPage() {
   const { me, fieldSkin } = useAccount();
+  const t = useT();
   const [asyks, setAsyks] = useState<Point[]>(PRESET);
   const [stones, setStones] = useState<Stone[]>([]);
   const [tool, setTool] = useState<Tool>("asyk");
@@ -80,21 +82,21 @@ export default function EditorPage() {
       return;
     }
     if (tool === "asyk") {
-      if (asyks.length >= MAX_CUSTOM_ASYKS) return setMessage(`Максимум ${MAX_CUSTOM_ASYKS} асыков`);
+      if (asyks.length >= MAX_CUSTOM_ASYKS) return setMessage(t("editor.maxAsyks", { n: MAX_CUSTOM_ASYKS }));
       const next = [...asyks, p];
-      if (!validLayout(next, stones)) return setMessage("Асык должен стоять внутри кона и не налезать на другие");
+      if (!validLayout(next, stones)) return setMessage(t("editor.badAsyk"));
       setAsyks(next);
     } else {
-      if (stones.length >= MAX_CUSTOM_STONES) return setMessage(`Максимум ${MAX_CUSTOM_STONES} камней`);
+      if (stones.length >= MAX_CUSTOM_STONES) return setMessage(t("editor.maxStones", { n: MAX_CUSTOM_STONES }));
       const next = [...stones, { ...p, r: STONE_R }];
-      if (!validLayout(asyks, next)) return setMessage("Камень не должен налезать на асыки и уходить далеко от кона");
+      if (!validLayout(asyks, next)) return setMessage(t("editor.badStone"));
       setStones(next);
     }
   };
 
   const code = () =>
     encodeChallenge({
-      t: title.trim() || "Испытание от друга",
+      t: title.trim() || t("lvl.custom.title"),
       a: asyks.map((p) => [p.x, p.y]),
       s: stones.map((s) => [s.x, s.y, s.r]),
       n: throws,
@@ -102,9 +104,9 @@ export default function EditorPage() {
     });
 
   const share = async () => {
-    if (!asyks.length) return setMessage("Поставь хотя бы один асык");
+    if (!asyks.length) return setMessage(t("editor.needAsyk"));
     const url = `${window.location.origin}/c/${code()}`;
-    const text = `Сможешь выбить мою расстановку в асық ату? ${asyks.length} асыков, ${throws} бросков.`;
+    const text = t("editor.shareText", { asyks: t("common.asyksN", { n: asyks.length }), throws: t("common.throwsN", { n: throws }) });
     try {
       if (navigator.share) {
         await navigator.share({ title: "Asyq League", text, url });
@@ -112,23 +114,23 @@ export default function EditorPage() {
       }
     } catch {}
     await navigator.clipboard?.writeText(`${text} ${url}`);
-    setMessage("Ссылка скопирована — отправь её другу!");
+    setMessage(t("editor.copied"));
   };
 
   return (
     <div className="mx-auto w-full max-w-lg px-4 pt-6 pb-16">
       <div className="flex items-center gap-2">
-        <h1 className="font-display text-2xl font-bold">Редактор</h1>
-        <span className="author-badge">авторское</span>
+        <h1 className="font-display text-2xl font-bold">{t("editor.title")}</h1>
+        <span className="author-badge">{t("common.authorBadge")}</span>
       </div>
-      <p className="mt-1 text-sm text-muted">Собери свою задачу на меткость и отправь другу ссылкой. Коснись фигуры, чтобы убрать её.</p>
+      <p className="mt-1 text-sm text-muted">{t("editor.lead")}</p>
 
-      <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1" role="radiogroup" aria-label="Инструмент">
+      <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1" role="radiogroup" aria-label={t("editor.tool")}>
         {(
           [
-            ["asyk", "🦴 Асык"],
-            ["stone", "🪨 Камень"],
-            ["erase", "✕ Убрать"],
+            ["asyk", t("editor.asyk")],
+            ["stone", t("editor.stone")],
+            ["erase", t("editor.erase")],
           ] as [Tool, string][]
         ).map(([t, label]) => (
           <button
@@ -149,32 +151,32 @@ export default function EditorPage() {
           className="block touch-none"
           style={{ width, height }}
           onPointerDown={onPointerDown}
-          aria-label="Поле редактора: нажмите внутри кона, чтобы поставить фигуру"
+          aria-label={t("editor.canvasAria")}
         />
       </div>
       <div className="mt-2 flex min-h-5 justify-between text-xs text-muted">
         <span>
-          Асыков: {asyks.length}/{MAX_CUSTOM_ASYKS} · камней: {stones.length}/{MAX_CUSTOM_STONES}
+          {t("editor.counts", { a: asyks.length, amax: MAX_CUSTOM_ASYKS, s: stones.length, smax: MAX_CUSTOM_STONES })}
         </span>
         <button className="underline" onClick={() => (setAsyks([]), setStones([]))}>
-          Очистить
+          {t("editor.clear")}
         </button>
       </div>
       {message && <p className="mt-1 text-sm text-gold">{message}</p>}
 
       <div className="card mt-4 grid gap-4 p-4">
         <label className="grid gap-1 text-sm">
-          <span className="text-muted">Название</span>
-          <input className="input" maxLength={40} placeholder="Например: «Для Айдоса»" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <span className="text-muted">{t("editor.name")}</span>
+          <input className="input" maxLength={40} placeholder={t("editor.namePlaceholder")} value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted">Бросков на раунд</span>
+          <span className="text-muted">{t("editor.throws")}</span>
           <div className="flex items-center gap-3">
-            <button className="btn btn-ghost h-9 w-9 !p-0" onClick={() => setThrows(Math.max(2, throws - 1))} aria-label="Меньше бросков">
+            <button className="btn btn-ghost h-9 w-9 !p-0" onClick={() => setThrows(Math.max(2, throws - 1))} aria-label={t("editor.fewer")}>
               −
             </button>
             <b className="w-6 text-center font-display">{throws}</b>
-            <button className="btn btn-ghost h-9 w-9 !p-0" onClick={() => setThrows(Math.min(15, throws + 1))} aria-label="Больше бросков">
+            <button className="btn btn-ghost h-9 w-9 !p-0" onClick={() => setThrows(Math.min(15, throws + 1))} aria-label={t("editor.more")}>
               +
             </button>
           </div>
@@ -184,15 +186,15 @@ export default function EditorPage() {
       <div className="mt-4 grid grid-cols-2 gap-2">
         {asyks.length ? (
           <Link href={`/c/${code()}`} className="btn btn-ghost">
-            Проверить самому
+            {t("editor.test")}
           </Link>
         ) : (
           <button className="btn btn-ghost" disabled>
-            Проверить самому
+            {t("editor.test")}
           </button>
         )}
         <button className="btn btn-primary" onClick={share} disabled={!asyks.length}>
-          🤝 Отправить другу
+          {t("editor.send")}
         </button>
       </div>
     </div>

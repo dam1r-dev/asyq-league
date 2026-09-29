@@ -9,9 +9,9 @@ const schema = z.object({ username: z.string().trim().toLowerCase().max(40), pas
 
 export const POST = safe(async (req: Request) => {
   const body = await parseBody(req, schema);
-  if (!body) return fail("Введите логин и пароль");
+  if (!body) return fail("enterCredentials");
   const user = await prisma.user.findUnique({ where: { username: body.username } });
-  if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return fail("Неверный логин или пароль", 401);
+  if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return fail("badCredentials", 401);
   await createSession(user.id);
   return NextResponse.json({ ok: true });
 });

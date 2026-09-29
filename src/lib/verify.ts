@@ -31,24 +31,24 @@ export function verifyAttempt(body: AttemptBody, owned: Set<string>):
   let dayKey: string | null = null;
 
   if (body.kind === "daily") {
-    if (!body.dayKey || !isDayKey(body.dayKey)) return { ok: false, error: "Неверная дата испытания" };
+    if (!body.dayKey || !isDayKey(body.dayKey)) return { ok: false, error: "badDay" };
     const today = almatyDayKey();
     const yesterday = almatyDayKey(new Date(Date.now() - 24 * 3600 * 1000));
     if (body.dayKey !== today && body.dayKey !== yesterday)
-      return { ok: false, error: "Это испытание дня уже закрыто" };
+      return { ok: false, error: "dayClosed" };
     dayKey = body.dayKey;
     level = dailyLevel(dayKey);
   } else {
     level = getLevel(body.levelId);
-    if (!level) return { ok: false, error: "Нет такого испытания" };
-    if (level.pack && !owned.has("pack-legends")) return { ok: false, error: "Набор испытаний не куплен" };
+    if (!level) return { ok: false, error: "noLevel" };
+    if (level.pack && !owned.has("pack-legends")) return { ok: false, error: "packNotOwned" };
   }
 
-  if (body.inputs.length > level.throws) return { ok: false, error: "Слишком много бросков" };
-  if (!body.inputs.every((i) => isValidInput(level!, i))) return { ok: false, error: "Некорректный бросок" };
+  if (body.inputs.length > level.throws) return { ok: false, error: "tooManyThrows" };
+  if (!body.inputs.every((i) => isValidInput(level!, i))) return { ok: false, error: "badThrow" };
 
   const state = replayRound(level, body.inputs);
-  if (state.status === "playing") return { ok: false, error: "Раунд не завершён" };
-  if (state.throwsUsed !== body.inputs.length) return { ok: false, error: "Лишние броски после конца раунда" };
+  if (state.status === "playing") return { ok: false, error: "notFinished" };
+  if (state.throwsUsed !== body.inputs.length) return { ok: false, error: "extraThrows" };
   return { ok: true, level, dayKey, state };
 }

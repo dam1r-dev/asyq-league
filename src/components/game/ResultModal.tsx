@@ -7,6 +7,8 @@ import { roundStats } from "@/game/coach";
 import { encodeChallenge, levelToChallenge } from "@/game/custom";
 import type { RoundState } from "@/game/types";
 import type { SubmitState } from "./PlayScreen";
+import { useT } from "@/i18n/provider";
+import { tipText } from "@/i18n/game";
 
 interface Props {
   round: RoundState;
@@ -21,6 +23,7 @@ interface Props {
 
 export default function ResultModal({ round, mode, submit, isRecord, challenge, nextHref, backHref, onRetry }: Props) {
   const { me } = useAccount();
+  const t = useT();
   const stats = roundStats(round);
   const won = round.status === "won";
   const [shared, setShared] = useState<string | null>(null);
@@ -34,36 +37,36 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
       levelToChallenge(round.level, { by: me?.displayName ?? challenge?.by, sc: round.score, th: round.throwsUsed }),
     );
     const url = `${window.location.origin}/c/${code}`;
-    const text = `Я выбил ${round.knocked} асыков и набрал ${round.score} очков в Asyq League. Сможешь лучше?`;
+    const text = t("result.shareText", { knocked: round.knocked, score: round.score });
     try {
       if (navigator.share) {
         await navigator.share({ title: "Asyq League", text, url });
-        setShared("Отправлено!");
+        setShared(t("result.shared"));
         return;
       }
     } catch {
       // пользователь закрыл диалог — просто копируем
     }
     await navigator.clipboard?.writeText(`${text} ${url}`);
-    setShared("Ссылка скопирована");
+    setShared(t("result.copied"));
   };
 
   let versus: string | null = null;
   if (mode === "custom" && challenge?.sc !== undefined) {
-    const name = challenge.by || "Автор";
+    const name = challenge.by || t("common.author");
     versus =
       round.score > challenge.sc
-        ? `Ты обошёл: ${name} набрал ${challenge.sc}.`
+        ? t("result.vsWin", { name, score: challenge.sc })
         : round.score === challenge.sc
-          ? `Ничья с ${name}: у обоих ${challenge.sc}.`
-          : `${name} набрал ${challenge.sc}. Попробуй ещё раз!`;
+          ? t("result.vsDraw", { name, score: challenge.sc })
+          : t("result.vsLose", { name, score: challenge.sc });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 backdrop-blur-sm sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-3 backdrop-blur-sm sm:items-center">
       <div className="pop-in card w-full max-w-[420px] p-5" role="dialog" aria-modal="true" aria-labelledby="result-title">
         <div className="text-center">
-          <div className="flex justify-center gap-1 text-4xl" aria-label={`Звёзд: ${round.stars} из 3`}>
+          <div className="flex justify-center gap-1 text-4xl" aria-label={t("result.starsAria", { n: round.stars })}>
             {[1, 2, 3].map((i) => (
               <span key={i} className={i <= round.stars ? "drop-shadow-[0_0_12px_rgba(242,180,65,0.6)]" : "opacity-20 grayscale"}>
                 ⭐
@@ -71,47 +74,47 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
             ))}
           </div>
           <h2 id="result-title" className="mt-2 font-display text-2xl font-bold">
-            {won ? (round.stars === 3 ? "Керемет!" : "Жеңіс!") : "Броски закончились"}
+            {won ? (round.stars === 3 ? t("result.perfect") : t("result.win")) : t("result.lose")}
           </h2>
           <p className="text-sm text-muted">
             {won
-              ? `Кон пуст за ${round.throwsUsed} ${plural(round.throwsUsed, "бросок", "броска", "бросков")}`
-              : `В коне осталось асыков: ${round.asyks.length}`}
+              ? t("result.clearedIn", { throws: t("common.throwsN", { n: round.throwsUsed }) })
+              : t("result.left", { n: round.asyks.length })}
           </p>
           <div className="mt-3 font-display text-5xl font-extrabold text-gold">{round.score}</div>
-          <div className="text-xs text-muted">очков {isRecord && mode !== "custom" && <span className="text-good">· новый рекорд!</span>}</div>
+          <div className="text-xs text-muted">{t("result.points")} {isRecord && mode !== "custom" && <span className="text-good">· {t("result.newRecord")}</span>}</div>
           {versus && <div className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-sm">{versus}</div>}
         </div>
 
         <div className="ornament-divider my-4" />
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-          <Row k="Выбито асыков" v={`+${round.knocked}`} />
-          <Row k="Бонус за комбо" v={`+${combos}`} />
-          <Row k="Штраф за сақа в коне" v={penalties ? `−${penalties}` : "0"} />
-          <Row k="Бонус за броски" v={`+${round.finishBonus}`} />
-          <Row k="Точность" v={`${Math.round(stats.hitRate * 100)}%`} />
-          <Row k="Средняя сила" v={`${Math.round(stats.avgPower * 100)}%`} />
+          <Row k={t("result.knocked")} v={`+${round.knocked}`} />
+          <Row k={t("result.combo")} v={`+${combos}`} />
+          <Row k={t("result.penalty")} v={penalties ? `−${penalties}` : "0"} />
+          <Row k={t("result.finish")} v={`+${round.finishBonus}`} />
+          <Row k={t("result.accuracy")} v={`${Math.round(stats.hitRate * 100)}%`} />
+          <Row k={t("result.power")} v={`${Math.round(stats.avgPower * 100)}%`} />
         </dl>
 
         <div className="mt-4 rounded-xl border border-sky/30 bg-sky/10 px-3 py-2 text-sm leading-snug">
-          <span className="font-bold text-sky">Совет: </span>
-          {stats.advice}
+          <span className="font-bold text-sky">{t("result.advice")} </span>
+          {tipText(stats.advice, t)}
         </div>
 
         {mode !== "custom" && (
           <div className="mt-3 text-center text-xs text-muted">
-            {submit.status === "saving" && "Сохраняем в профиль…"}
+            {submit.status === "saving" && t("result.saving")}
             {submit.status === "saved" &&
-              `✓ Проверено сервером и сохранено${submit.rank ? ` · место в рейтинге дня: ${submit.rank}` : ""}`}
+              `${t("result.saved")}${submit.rank ? t("result.rank", { n: submit.rank }) : ""}`}
             {submit.status === "error" && <span className="text-bad">{submit.message}</span>}
             {submit.status === "guest" && (
               <>
-                Результат сохранён в этом браузере.{" "}
+                {t("result.guest1")}{" "}
                 <Link href="/auth" className="text-gold underline">
-                  Войди
+                  {t("result.guestLogin")}
                 </Link>
-                , чтобы попасть в рейтинг и играть с любого устройства.
+                {t("result.guest2")}
               </>
             )}
           </div>
@@ -120,19 +123,19 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
         <div className="mt-4 grid gap-2">
           {nextHref && (
             <Link href={nextHref} className="btn btn-primary">
-              Следующее испытание →
+              {t("result.next")}
             </Link>
           )}
           <div className="grid grid-cols-2 gap-2">
             <button className={`btn ${nextHref ? "btn-ghost" : "btn-primary"}`} onClick={onRetry}>
-              Ещё раз
+              {t("result.retry")}
             </button>
             <Link href={backHref} className="btn btn-ghost">
-              Меню
+              {t("common.menu")}
             </Link>
           </div>
           <button className="btn btn-ghost" onClick={shareChallenge}>
-            {shared ?? "🤝 Бросить вызов другу"}
+            {shared ?? t("result.challenge")}
           </button>
         </div>
       </div>
@@ -147,13 +150,5 @@ function Row({ k, v }: { k: string; v: string }) {
       <dd className="text-right font-semibold">{v}</dd>
     </>
   );
-}
-
-function plural(n: number, one: string, few: string, many: string) {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
 }
 

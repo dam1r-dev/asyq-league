@@ -17,14 +17,14 @@ const schema = z.object({
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
-  if (!user) return fail("Нужно войти", 401);
+  if (!user) return fail("needLogin", 401);
   const body = await parseBody(req, schema);
-  if (!body) return fail("Некорректные данные");
+  if (!body) return fail("badData");
 
   const item = getItem(body.itemId);
-  if (!item || item.priceKzt === 0) return fail("Этот предмет нельзя купить");
+  if (!item || item.priceKzt === 0) return fail("notForSale");
   if (body.card.replace(/\s/g, "") !== "4242424242424242")
-    return fail("Тестовый режим: используйте карту 4242 4242 4242 4242", 402);
+    return fail("testCard", 402);
 
   await prisma.purchase.upsert({
     where: { userId_itemId: { userId: user.id, itemId: item.id } },

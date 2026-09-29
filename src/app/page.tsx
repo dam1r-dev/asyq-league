@@ -5,10 +5,12 @@ import { useAccount } from "@/components/AccountProvider";
 import AsyqMark from "@/components/AsyqMark";
 import { LEVELS } from "@/game/levels";
 import { useLocal } from "@/lib/local";
+import { useT } from "@/i18n/provider";
 
 export default function Home() {
   const local = useLocal();
   const { me } = useAccount();
+  const t = useT();
 
   const stars = (id: string) => Math.max(local.levels[id]?.stars ?? 0, me?.progress[id]?.stars ?? 0);
   const totalStars = LEVELS.reduce((s, l) => s + stars(l.id), 0);
@@ -19,103 +21,91 @@ export default function Home() {
     <div className="mx-auto w-full max-w-5xl px-4 pb-16">
       <section className="relative overflow-hidden pt-10 pb-8 text-center sm:pt-16">
         <div className="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-good" /> Казахская игра на меткость
+          <span className="h-1.5 w-1.5 rounded-full bg-good" /> {t("home.badge")}
         </div>
         <h1 className="font-display text-[34px] leading-[1.05] font-extrabold tracking-tight sm:text-6xl">
-          Асық ату —<br />
-          <span className="text-gold">теперь в браузере</span>
+          {t("home.title1")}
+          <br />
+          <span className="text-gold">{t("home.title2")}</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-muted sm:text-lg">
-          Прицелься, выбери силу и выбей асыки из кона сақой. Как летом во дворе, только теперь
-          с рекордами, испытанием дня и лигой университетов.
+          {t("home.lead")}
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href={`/play/${firstTime ? "l1" : nextLevel.id}`} className="btn btn-primary w-full max-w-xs px-8 py-4 text-lg sm:w-auto">
-            {firstTime ? "Играть — обучение за 1 минуту" : `Играть: ${nextLevel.title}`}
+            {firstTime ? t("home.playTutorial") : t("home.playLevel", { title: nextLevel.title })}
           </Link>
           <Link href="/rules" className="btn btn-ghost w-full max-w-xs sm:w-auto">
-            Правила игры
+            {t("home.rules")}
           </Link>
         </div>
         <AsyqRow />
       </section>
 
       <section aria-labelledby="modes" className="mt-2">
-        <h2 id="modes" className="sr-only">Режимы</h2>
+        <h2 id="modes" className="sr-only">{t("nav.levels")}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ModeCard
             href="/levels"
             icon="🎯"
-            title="Испытания"
-            text={`12 расстановок от простого ряда до «Шеберлер». Собрано звёзд: ${totalStars} из 36.`}
+            title={t("home.modes.levels")}
+            text={t("home.modes.levelsText", { stars: totalStars })}
             accent
           />
           <ModeCard
             href="/daily"
             icon="☀️"
-            title="Күн сынағы"
-            text="Испытание дня — одна расстановка для всех. Попади в топ дня и принеси очки своему вузу."
-            badge="каждый день новое"
+            title={t("home.modes.daily")}
+            text={t("home.modes.dailyText")}
+            badge={t("home.modes.dailyBadge")}
           />
-          <ModeCard href="/duel" icon="⚔️" title="Екеуара — дуэль" text="Вдвоём на одном телефоне, по очереди, как во дворе. Выбил — бросаешь ещё раз." />
+          <ModeCard href="/duel" icon="⚔️" title={t("home.modes.duel")} text={t("home.modes.duelText")} />
           <ModeCard
             href="/editor"
             icon="✏️"
-            title="Редактор"
-            text="Собери свою расстановку и отправь ссылку другу: кто выбьет больше?"
+            title={t("home.modes.editor")}
+            text={t("home.modes.editorText")}
           />
           <ModeCard
             href="/leaderboard"
             icon="🏆"
-            title="Лига университетов"
-            text="Narxoz, KBTU, SDU, AITU… Каждое испытание дня приносит очки твоему университету."
+            title={t("home.modes.league")}
+            text={t("home.modes.leagueText")}
           />
-          <ModeCard href="/shop" icon="🎨" title="Сақа и площадки" text="Золотая сақа, степь, войлочный киіз. Только внешний вид — никаких преимуществ." />
+          <ModeCard href="/shop" icon="🎨" title={t("home.modes.shop")} text={t("home.modes.shopText")} />
         </div>
       </section>
 
       <section className="mt-12 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="card p-5 sm:p-6">
-          <h2 className="font-display text-xl font-bold">Как играть</h2>
+          <h2 className="font-display text-xl font-bold">{t("home.howTitle")}</h2>
           <ol className="mt-4 grid gap-4">
-            <Step n={1} title="Потяни назад">
-              Коснись поля и потяни назад, как рогатку. Направление — куда полетит сақа, длина — сила броска.
+            <Step n={1} title={t("home.step1")}>
+              {t("home.step1Text")}
             </Step>
-            <Step n={2} title="Отпусти">
-              Сақа скользит по земле и сбивает асыки. Пунктир показывает путь до первого удара.
+            <Step n={2} title={t("home.step2")}>
+              {t("home.step2Text")}
             </Step>
-            <Step n={3} title="Выбей за линию">
-              Асык полностью за меловым кругом — +1. Выбил пару за раз — бонус. Сақа осталась в коне — −1.
+            <Step n={3} title={t("home.step3")}>
+              {t("home.step3Text")}
             </Step>
           </ol>
         </div>
         <div className="card flex flex-col justify-between p-5 sm:p-6">
           <div>
-            <h2 className="font-display text-xl font-bold">Что такое асық?</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              Асық — таранная косточка барана. Казахские дети веками играли ими во дворах и на
-              джайлау: ставили асыки в ряд внутри круга — <b className="text-text">кона</b> — и выбивали
-              их тяжёлым биткой-асыком — <b className="text-text">сақой</b>. Сақу часто красили и даже
-              заливали свинцом, чтобы била сильнее.
-            </p>
+            <h2 className="font-display text-xl font-bold">{t("home.whatTitle")}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted">{t("home.whatText")}</p>
           </div>
-          <p className="mt-4 text-sm text-muted">
-            У асыка четыре стороны: <b className="text-gold">алшы</b>, <b className="text-gold">тәйкі</b>,{" "}
-            <b className="text-gold">бүк</b> и <b className="text-gold">шік</b>. В игре ты увидишь, какой стороной
-            упал каждый выбитый асык.
-          </p>
+          <p className="mt-4 text-sm text-muted">{t("home.sidesText")}</p>
         </div>
       </section>
 
       {!me && (
         <section className="card mt-6 flex flex-col items-center gap-3 p-5 text-center sm:flex-row sm:text-left">
           <AsyqMark className="h-10 w-10 shrink-0" />
-          <p className="flex-1 text-sm text-muted">
-            Можно играть без регистрации — прогресс сохранится в браузере. Создай аккаунт, чтобы попасть в
-            рейтинг, выбрать свой университет и продолжать с любого устройства.
-          </p>
+          <p className="flex-1 text-sm text-muted">{t("home.guestText")}</p>
           <Link href="/auth" className="btn btn-ghost">
-            Создать аккаунт
+            {t("home.createAccount")}
           </Link>
         </section>
       )}
@@ -159,7 +149,7 @@ function ModeCard({
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <li className="flex gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-display text-sm font-bold text-[#2a1a05]">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold font-display text-sm font-bold text-on-gold">
         {n}
       </span>
       <div>

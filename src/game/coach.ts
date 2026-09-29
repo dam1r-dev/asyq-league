@@ -1,18 +1,26 @@
 import type { RoundState, ThrowResult } from "./types";
 
+/**
+ * Советы возвращаются ключами словаря (coach.*), а не готовым текстом —
+ * так движок не зависит от языка интерфейса.
+ */
+export interface Tip {
+  tone: "good" | "warn" | "bad";
+  key: string;
+  params?: Record<string, number>;
+}
+
 /** Короткий совет после броска: что пошло не так и как исправить. */
-export function throwTip(r: ThrowResult): { tone: "good" | "warn" | "bad"; text: string } {
+export function throwTip(r: ThrowResult): Tip {
   const n = r.knockedIds.length;
-  if (n >= 3) return { tone: "good", text: `Керемет! ${n} асыка одним броском.` };
-  if (n > 0 && r.saqaInKon)
-    return { tone: "warn", text: "Выбил, но сақа осталась в коне (−1). Бросай сильнее — пусть пролетает насквозь." };
-  if (n === 2) return { tone: "good", text: "Дубль! Бонус +1 за второй асык." };
-  if (n === 1) return { tone: "good", text: "Есть! Попробуй зайти сбоку, чтобы выбить несколько сразу." };
-  if (!r.hit && r.saqaInKon)
-    return { tone: "bad", text: "Мимо, и сақа осталась в коне (−1). Прицелься точнее и добавь силы." };
-  if (!r.hit) return { tone: "bad", text: "Мимо. Следи за пунктиром — он показывает первый удар." };
-  if (r.power < 0.75) return { tone: "warn", text: "Попал, но слабо. Нужно больше силы, чтобы асык вылетел за линию." };
-  return { tone: "warn", text: "Попал, но асык остался в коне. Бей ближе к центру асыка." };
+  if (n >= 3) return { tone: "good", key: "coach.many", params: { n } };
+  if (n > 0 && r.saqaInKon) return { tone: "warn", key: "coach.knockedButIn" };
+  if (n === 2) return { tone: "good", key: "coach.double" };
+  if (n === 1) return { tone: "good", key: "coach.one" };
+  if (!r.hit && r.saqaInKon) return { tone: "bad", key: "coach.missIn" };
+  if (!r.hit) return { tone: "bad", key: "coach.miss" };
+  if (r.power < 0.75) return { tone: "warn", key: "coach.weak" };
+  return { tone: "warn", key: "coach.center" };
 }
 
 export interface RoundStats {
@@ -21,7 +29,7 @@ export interface RoundStats {
   avgPower: number;
   penalties: number;
   combos: number;
-  advice: string;
+  advice: { key: string; params?: Record<string, number> };
 }
 
 /** Итог раунда: точность, средняя сила и один главный совет. */
@@ -34,15 +42,13 @@ export function roundStats(state: RoundState): RoundStats {
   const avgPower = h.reduce((s, r) => s + r.power, 0) / throws;
   const hitRate = hits / throws;
 
-  let advice: string;
-  if (hitRate < 0.5) advice = "Главное сейчас — точность. Не спеши: наведи пунктир на край асыка.";
-  else if (penalties >= 2) advice = "Сақа часто застревает в коне. Бросай на 80–100% силы.";
-  else if (avgPower < 0.7) advice = "Ты бросаешь мягко. Асыки вылетают только от сильного удара.";
-  else if (combos === 0 && state.level.asyks.length > 4)
-    advice = "Встань сбоку на линии (кнопки ◀ ▶) и бей вдоль ряда — так выбивают по 2–3 асыка.";
-  else if (state.status === "won" && state.stars < 3)
-    advice = `Для трёх звёзд уложись в ${state.level.par3} ${state.level.par3 < 5 ? "броска" : "бросков"}.`;
-  else advice = "Отличная серия! Попробуй испытание дня и сравни себя с другими.";
+  let advice: RoundStats["advice"];
+  if (hitRate < 0.5) advice = { key: "coach.adviceAccuracy" };
+  else if (penalties >= 2) advice = { key: "coach.advicePenalty" };
+  else if (avgPower < 0.7) advice = { key: "coach.adviceSoft" };
+  else if (combos === 0 && state.level.asyks.length > 4) advice = { key: "coach.adviceSide" };
+  else if (state.status === "won" && state.stars < 3) advice = { key: "coach.adviceStars", params: { n: state.level.par3 } };
+  else advice = { key: "coach.adviceGreat" };
 
   return { throws: h.length, hitRate, avgPower, penalties, combos, advice };
 }

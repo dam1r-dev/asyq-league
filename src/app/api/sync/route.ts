@@ -16,9 +16,9 @@ const schema = z.object({
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
-  if (!user) return fail("Нужно войти", 401);
+  if (!user) return fail("needLogin", 401);
   const body = await parseBody(req, schema);
-  if (!body) return fail("Некорректные данные");
+  if (!body) return fail("badData");
   const entries = Object.entries(body.levels).slice(0, 40);
 
   const owned = await ownedItems(user.id);

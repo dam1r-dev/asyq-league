@@ -13,6 +13,8 @@ import { getLocal, loadRoundInputs, recordResult, saveRoundInputs, updateLocal, 
 import { sfx } from "@/lib/sound";
 import { useIsClient } from "@/lib/useIsClient";
 import { toggleSound } from "@/components/AccountProvider";
+import { useT } from "@/i18n/provider";
+import { errorText, levelHint, levelSubtitle, tipText } from "@/i18n/game";
 
 export interface PlayScreenProps {
   level: LevelDef;
@@ -23,6 +25,8 @@ export interface PlayScreenProps {
   backHref: string;
   nextHref?: string;
   challenge?: { by?: string; sc?: number; th?: number; code: string };
+  /** Подсказка перед первым броском (если не задана — берётся из словаря уровня). */
+  hint?: string;
 }
 
 export type SubmitState =
@@ -57,7 +61,8 @@ function PlayScreenInner(props: PlayScreenProps) {
   const [restored] = useState(() => restoreRound(level, roundKey));
   const [round, setRound] = useState<RoundState>(() => restored?.state ?? initRound(level));
   const [inputs, setInputs] = useState<ThrowInput[]>(() => restored?.inputs ?? []);
-  const [tip, setTip] = useState<ReturnType<typeof throwTip> & { key: number } | null>(null);
+  const t = useT();
+  const [tip, setTip] = useState<(ReturnType<typeof throwTip> & { id: number }) | null>(null);
   const [last, setLast] = useState<ThrowResult | null>(null);
   const [resumed, setResumed] = useState(!!restored);
   const [showResult, setShowResult] = useState(false);
@@ -100,13 +105,13 @@ function PlayScreenInner(props: PlayScreenProps) {
           body: JSON.stringify({ kind: mode, levelId: level.id, dayKey, inputs: allInputs }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Ошибка сохранения");
+        if (!res.ok) throw new Error(errorText(data.error, t, t("play.saveError")));
         setSubmit({ status: "saved", best: data.best, rank: data.rank });
       } catch (e) {
-        setSubmit({ status: "error", message: e instanceof Error ? e.message : "Ошибка сети" });
+        setSubmit({ status: "error", message: e instanceof Error ? e.message : t("play.netError") });
       }
     },
-    [dayKey, level, me, mode, roundKey],
+    [dayKey, level, me, mode, roundKey, t],
   );
 
   const onThrowEnd = useCallback(
@@ -116,7 +121,7 @@ function PlayScreenInner(props: PlayScreenProps) {
       setRound(state);
       setInputs(nextInputs);
       setLast(result);
-      setTip({ ...throwTip(result), key: nextInputs.length });
+      setTip({ ...throwTip(result), id: nextInputs.length });
       setResumed(false);
       if (result.penalty) sfx.penalty();
       if (state.status === "playing") saveRoundInputs(roundKey, nextInputs);
@@ -141,38 +146,37 @@ function PlayScreenInner(props: PlayScreenProps) {
 
   const coach = useMemo(() => {
     if (!tutorial) return null;
-    if (round.throwsUsed === 0)
-      return "Выбей асыки за меловой круг. Потяни поле назад, как рогатку, и отпусти — чем дальше, тем сильнее.";
-    if (round.throwsUsed === 1)
-      return "Асык за линией — +1. Сақа осталась в коне — −1. Кнопки ◀ ▶ двигают место броска.";
+    if (round.throwsUsed === 0) return t("play.coach1");
+    if (round.throwsUsed === 1) return t("play.coach2");
     return null;
-  }, [round.throwsUsed, tutorial]);
+  }, [round.throwsUsed, tutorial, t]);
+  const hint = props.hint ?? levelHint(level, t);
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-56px)] w-full max-w-[560px] flex-col px-3 pb-3">
       {/* Верхняя панель раунда */}
       <div className="flex items-center gap-3 py-2">
-        <Link href={backHref} className="btn btn-ghost h-10 w-10 !p-0" aria-label="Назад">
+        <Link href={backHref} className="btn btn-ghost h-10 w-10 !p-0" aria-label={t("common.back")}>
           ←
         </Link>
         <div className="min-w-0 flex-1">
           <div className="truncate font-display text-[15px] font-bold leading-tight">{level.title}</div>
-          <div className="truncate text-xs text-muted">{level.subtitle}</div>
+          <div className="truncate text-xs text-muted">{levelSubtitle(level, t, { day: dayKey, by: props.challenge?.by })}</div>
         </div>
         <button
           className="btn btn-ghost h-10 w-10 !p-0"
           onClick={toggleSound}
-          aria-label={local.settings.sound ? "Выключить звук" : "Включить звук"}
+          aria-label={local.settings.sound ? t("common.soundOff") : t("common.soundOn")}
         >
           {local.settings.sound ? "🔊" : "🔇"}
         </button>
       </div>
 
       <div className="grid grid-cols-3 gap-2 pb-2 text-center">
-        <Stat label="Очки" value={round.score} accent />
-        <Stat label="Асыков в коне" value={remaining} />
+        <Stat label={t("play.score")} value={round.score} accent />
+        <Stat label={t("play.inKon")} value={remaining} />
         <div className="card flex flex-col items-center justify-center px-2 py-1.5">
-          <div className="flex flex-wrap justify-center gap-1" aria-label={`Осталось бросков: ${throwsLeft}`}>
+          <div className="flex flex-wrap justify-center gap-1" aria-label={t("play.throwsLeftAria", { n: throwsLeft })}>
             {Array.from({ length: level.throws }, (_, i) => (
               <span
                 key={i}
@@ -180,30 +184,30 @@ function PlayScreenInner(props: PlayScreenProps) {
               />
             ))}
           </div>
-          <div className="mt-1 text-[11px] text-muted">бросков: {throwsLeft}</div>
+          <div className="mt-1 text-[11px] text-muted">{t("play.throwsLeft", { n: throwsLeft })}</div>
         </div>
       </div>
 
       {/* Лента подсказок: над полем, чтобы не закрывать кон. */}
       <div className="mb-2 flex min-h-[44px] flex-col justify-center gap-1.5" aria-live="polite">
         {tip && round.status === "playing" ? (
-          <Message key={tip.key} tone={tip.tone}>
+          <Message key={tip.id} tone={tip.tone}>
             {last && last.knockedIds.length > 0 && (
               <b className="mr-1 text-gold">
                 +{last.knockedIds.length + last.comboBonus}
                 {last.sides.length > 0 && ` · ${last.sides.join(", ")}`}
               </b>
             )}
-            {tip.text}
+            {tipText(tip, t)}
           </Message>
         ) : resumed ? (
-          <Message>Раунд восстановлен — продолжаем с {round.throwsUsed + 1}-го броска.</Message>
-        ) : !coach && round.throwsUsed === 0 && level.hint ? (
-          <Message muted>💡 {level.hint}</Message>
+          <Message>{t("play.resumed", { n: round.throwsUsed + 1 })}</Message>
+        ) : !coach && round.throwsUsed === 0 && hint ? (
+          <Message muted>💡 {hint}</Message>
         ) : null}
         {coach && (
           <Message tone="warn">
-            <b className="text-gold">Как играть. </b>
+            <b className="text-gold">{t("play.howTo")} </b>
             {coach}
           </Message>
         )}

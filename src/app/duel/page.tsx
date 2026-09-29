@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useIsClient } from "@/lib/useIsClient";
+import { useT } from "@/i18n/provider";
 import { useAccount, toggleSound } from "@/components/AccountProvider";
 import GameCanvas from "@/components/game/GameCanvas";
 import { DUEL_THROWS_EACH, duelThrow, initDuel, type DuelState } from "@/game/duel";
@@ -42,6 +43,7 @@ export default function DuelPage() {
 function Duel() {
   const { saqaSkin, fieldSkin, me } = useAccount();
   const local = useLocal();
+  const t = useT();
   // Незаконченная дуэль восстанавливается после перезагрузки.
   const [restored] = useState(restoreDuel);
   const [names, setNames] = useState<[string, string]>(["", ""]);
@@ -50,7 +52,7 @@ function Duel() {
 
   const start = (e: React.FormEvent) => {
     e.preventDefault();
-    const n: [string, string] = [names[0].trim() || me?.displayName || "Игрок 1", names[1].trim() || "Игрок 2"];
+    const n: [string, string] = [names[0].trim() || me?.displayName || t("duel.p1Default"), names[1].trim() || t("duel.p2Default")];
     setNames(n);
     setDuel(initDuel(n));
     setInputs([]);
@@ -89,33 +91,32 @@ function Duel() {
   if (!duel) {
     return (
       <div className="mx-auto w-full max-w-md px-4 pt-8 pb-16">
-        <h1 className="font-display text-2xl font-bold">Екеуара — дуэль</h1>
+        <h1 className="font-display text-2xl font-bold">{t("duel.title")}</h1>
         <p className="mt-2 text-sm text-muted">
-          Двое на одном устройстве. Бросаете по очереди по общему кону из 11 асыков, у каждого по {DUEL_THROWS_EACH}{" "}
-          бросков. Выбил асык — бросаешь ещё раз. Сақа осталась в коне — −1.
+          {t("duel.lead", { n: DUEL_THROWS_EACH })}
         </p>
         <form onSubmit={start} className="card mt-6 grid gap-3 p-5">
           <label className="grid gap-1 text-sm">
-            <span className="text-muted">Первый игрок</span>
+            <span className="text-muted">{t("duel.p1")}</span>
             <input
               className="input"
               maxLength={16}
-              placeholder={me?.displayName ?? "Игрок 1"}
+              placeholder={me?.displayName ?? t("duel.p1Default")}
               value={names[0]}
               onChange={(e) => setNames([e.target.value, names[1]])}
             />
           </label>
           <label className="grid gap-1 text-sm">
-            <span className="text-muted">Второй игрок</span>
+            <span className="text-muted">{t("duel.p2")}</span>
             <input
               className="input"
               maxLength={16}
-              placeholder="Игрок 2"
+              placeholder={t("duel.p2Default")}
               value={names[1]}
               onChange={(e) => setNames([names[0], e.target.value])}
             />
           </label>
-          <button className="btn btn-primary mt-2">Начать дуэль</button>
+          <button className="btn btn-primary mt-2">{t("duel.start")}</button>
         </form>
       </div>
     );
@@ -127,11 +128,11 @@ function Duel() {
   return (
     <div className="mx-auto flex h-[calc(100dvh-56px)] w-full max-w-[560px] flex-col px-3 pb-3">
       <div className="flex items-center gap-3 py-2">
-        <Link href="/" className="btn btn-ghost h-10 w-10 !p-0" aria-label="Назад">
+        <Link href="/" className="btn btn-ghost h-10 w-10 !p-0" aria-label={t("common.back")}>
           ←
         </Link>
-        <div className="flex-1 font-display text-[15px] font-bold">Екеуара</div>
-        <button className="btn btn-ghost h-10 w-10 !p-0" onClick={toggleSound} aria-label="Звук">
+        <div className="flex-1 font-display text-[15px] font-bold">{t("duel.short")}</div>
+        <button className="btn btn-ghost h-10 w-10 !p-0" onClick={toggleSound} aria-label={local.settings.sound ? t("common.soundOff") : t("common.soundOn")}>
           {local.settings.sound ? "🔊" : "🔇"}
         </button>
       </div>
@@ -174,13 +175,13 @@ function Duel() {
                     <div className="text-xs text-muted">
                       {duel.names[last.player]}:{" "}
                       {last.result.knockedIds.length
-                        ? `выбил ${last.result.knockedIds.length} (${last.result.sides.join(", ")})`
-                        : "мимо"}
-                      {last.result.penalty ? ", сақа в коне −1" : ""}
+                        ? t("duel.knocked", { n: last.result.knockedIds.length, sides: last.result.sides.join(", ") })
+                        : t("duel.miss")}
+                      {last.result.penalty ? t("duel.penalty") : ""}
                     </div>
                   )}
                   <span className="font-bold text-gold">{turnName}</span>
-                  {last?.extraTurn ? " бросает ещё раз!" : ", твой бросок"}
+                  {last?.extraTurn ? t("duel.again") : t("duel.yourTurn")}
                 </div>
               </div>
             )
@@ -189,21 +190,21 @@ function Duel() {
       </div>
 
       {duel.status === "finished" && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 backdrop-blur-sm sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-3 backdrop-blur-sm sm:items-center">
           <div className="pop-in card w-full max-w-[400px] p-6 text-center" role="dialog" aria-modal="true">
             <div className="text-5xl">{duel.winner === "draw" ? "🤝" : "🏆"}</div>
             <h2 className="mt-3 font-display text-2xl font-bold">
-              {duel.winner === "draw" ? "Ничья!" : `${duel.names[duel.winner as 0 | 1]} победил!`}
+              {duel.winner === "draw" ? t("duel.draw") : t("duel.wins", { name: duel.names[duel.winner as 0 | 1] })}
             </h2>
             <p className="mt-2 text-muted">
               {duel.names[0]} {duel.scores[0]} : {duel.scores[1]} {duel.names[1]}
             </p>
             <div className="mt-6 grid gap-2">
               <button className="btn btn-primary" onClick={rematch}>
-                Реванш (первым ходит {duel.names[1]})
+                {t("duel.rematch", { name: duel.names[1] })}
               </button>
               <button className="btn btn-ghost" onClick={() => setDuel(null)}>
-                Новые игроки
+                {t("duel.newPlayers")}
               </button>
             </div>
           </div>

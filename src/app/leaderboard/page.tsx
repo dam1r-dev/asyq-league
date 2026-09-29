@@ -3,29 +3,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
+import { useT } from "@/i18n/provider";
 
 type Tab = "day" | "uni" | "masters";
 interface Row {
   name: string;
   university: string | null;
   value: number;
-  extra?: string;
+  players?: number;
   userId?: string;
 }
 
 const TABS: { id: Tab; label: string; hint: string; unit: string }[] = [
-  { id: "day", label: "Күн сынағы", hint: "Лучший результат каждого игрока в сегодняшнем испытании.", unit: "очк." },
-  {
-    id: "uni",
-    label: "Лига вузов",
-    hint: "Сумма лучших результатов студентов в испытаниях дня за последние 7 дней. Чем больше однокурсников играет каждый день — тем выше вуз.",
-    unit: "очк.",
-  },
-  { id: "masters", label: "Мастера", hint: "Сумма звёзд в 12 основных испытаниях.", unit: "⭐" },
+  { id: "day", label: "leaderboard.tabDay", hint: "leaderboard.hintDay", unit: "common.points" },
+  { id: "uni", label: "leaderboard.tabUni", hint: "leaderboard.hintUni", unit: "common.points" },
+  { id: "masters", label: "leaderboard.tabMasters", hint: "leaderboard.hintMasters", unit: "⭐" },
 ];
 
 export default function LeaderboardPage() {
   const { me } = useAccount();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("day");
   const [data, setData] = useState<{ tab: Tab; rows: Row[]; offline?: boolean } | null>(null);
 
@@ -46,41 +43,41 @@ export default function LeaderboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16">
-      <h1 className="font-display text-2xl font-bold">Рейтинг</h1>
+      <h1 className="font-display text-2xl font-bold">{t("leaderboard.title")}</h1>
 
       <Link href="/daily" className="card mt-4 flex items-center gap-4 border-gold/40 p-4">
         <div className="text-3xl">☀️</div>
         <div className="flex-1">
-          <div className="font-display font-bold">Испытание дня</div>
-          <div className="text-sm text-muted">Новая расстановка каждый день в 00:00 по Алматы. Играй сколько угодно — в зачёт идёт лучший.</div>
+          <div className="font-display font-bold">{t("leaderboard.dailyCard")}</div>
+          <div className="text-sm text-muted">{t("leaderboard.dailyCardText")}</div>
         </div>
-        <span className="btn btn-primary !py-2 text-sm">Играть</span>
+        <span className="btn btn-primary !py-2 text-sm">{t("common.play")}</span>
       </Link>
 
       <div className="mt-5 grid grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1" role="tablist">
-        {TABS.map((t) => (
+        {TABS.map((tb) => (
           <button
-            key={t.id}
+            key={tb.id}
             role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={`rounded-xl py-2 text-sm font-semibold ${tab === t.id ? "bg-surface-2 text-text" : "text-muted"}`}
+            aria-selected={tab === tb.id}
+            onClick={() => setTab(tb.id)}
+            className={`rounded-xl py-2 text-sm font-semibold ${tab === tb.id ? "bg-surface-2 text-text" : "text-muted"}`}
           >
-            {t.label}
+            {t(tb.label)}
           </button>
         ))}
       </div>
-      <p className="mt-3 text-sm text-muted">{info.hint}</p>
+      <p className="mt-3 text-sm text-muted">{t(info.hint)}</p>
 
       <ol className="card mt-3 divide-y divide-line">
-        {!rows && <li className="p-4 text-sm text-muted">Загрузка…</li>}
+        {!rows && <li className="p-4 text-sm text-muted">{t("common.loading")}</li>}
         {rows?.length === 0 && (
           <li className="p-6 text-center text-sm text-muted">
             {data?.offline
-              ? "Рейтинг временно недоступен."
+              ? t("leaderboard.offline")
               : tab === "uni"
-                ? "Пока ни один вуз не набрал очков. Выбери университет в профиле и сыграй испытание дня!"
-                : "Здесь пока пусто — стань первым!"}
+                ? t("leaderboard.emptyUni")
+                : t("leaderboard.empty")}
           </li>
         )}
         {rows?.map((r, i) => {
@@ -97,15 +94,15 @@ export default function LeaderboardPage() {
               </span>
               <div className="relative min-w-0 flex-1">
                 <div className="truncate font-semibold">
-                  {r.name}
-                  {mine && <span className="ml-2 text-xs text-gold">это ты</span>}
+                  {r.name === "Другой" ? t("uni.other") : r.name}
+                  {mine && <span className="ml-2 text-xs text-gold">{t("leaderboard.you")}</span>}
                 </div>
-                {(r.university && tab !== "uni") || r.extra ? (
-                  <div className="text-xs text-muted">{tab === "uni" ? r.extra : r.university}</div>
+                {(r.university && tab !== "uni") || r.players ? (
+                  <div className="text-xs text-muted">{tab === "uni" ? t("leaderboard.players", { n: r.players ?? 0 }) : r.university === "Другой" ? t("uni.other") : r.university}</div>
                 ) : null}
               </div>
               <b className="relative font-display">
-                {r.value} <span className="text-xs font-normal text-muted">{info.unit}</span>
+                {r.value} <span className="text-xs font-normal text-muted">{info.unit.includes(".") ? t(info.unit) : info.unit}</span>
               </b>
             </li>
           );
@@ -115,9 +112,9 @@ export default function LeaderboardPage() {
       {!me && (
         <p className="mt-4 text-center text-sm text-muted">
           <Link href="/auth" className="text-gold underline">
-            Войди
+            {t("leaderboard.loginPrompt1")}
           </Link>
-          , чтобы твои результаты попадали в рейтинг.
+          {t("leaderboard.loginPrompt2")}
         </p>
       )}
     </div>

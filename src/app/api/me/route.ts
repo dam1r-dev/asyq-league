@@ -26,9 +26,9 @@ const patchSchema = z.object({
 
 export const PATCH = safe(async (req: Request) => {
   const user = await getSessionUser();
-  if (!user) return fail("Нужно войти", 401);
+  if (!user) return fail("needLogin", 401);
   const body = await parseBody(req, patchSchema);
-  if (!body) return fail("Некорректные данные");
+  if (!body) return fail("badData");
 
   // Надеть можно только то, что куплено (или бесплатно) и подходит по типу.
   const owned = await ownedItems(user.id);
@@ -38,8 +38,8 @@ export const PATCH = safe(async (req: Request) => {
   ] as const) {
     const id = body[field];
     if (id === undefined) continue;
-    if (getItem(id)?.kind !== kind) return fail("Неизвестный предмет");
-    if (!isFree(id) && !owned.has(id)) return fail("Предмет не куплен", 403);
+    if (getItem(id)?.kind !== kind) return fail("unknownItem");
+    if (!isFree(id) && !owned.has(id)) return fail("notOwned", 403);
   }
 
   const updated = await prisma.user.update({ where: { id: user.id }, data: body });

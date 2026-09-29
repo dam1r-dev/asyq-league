@@ -7,9 +7,9 @@ import { attemptSchema, verifyAttempt } from "@/lib/verify";
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
-  if (!user) return fail("Нужно войти", 401);
+  if (!user) return fail("needLogin", 401);
   const body = await parseBody(req, attemptSchema);
-  if (!body) return fail("Некорректные данные");
+  if (!body) return fail("badData");
 
   const v = verifyAttempt(body, await ownedItems(user.id));
   if (!v.ok) return fail(v.error);
