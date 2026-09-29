@@ -211,6 +211,9 @@ export default function GameCanvas({
     canvas.width = Math.round(size.w * dpr);
     canvas.height = Math.round(size.h * dpr);
     const ctx = canvas.getContext("2d")!;
+    // canvas не понимает CSS-переменные, поэтому берём реальное имя шрифта.
+    const displayFont =
+      getComputedStyle(document.documentElement).getPropertyValue("--font-montserrat").trim() || "system-ui";
     let raf = 0;
     let last = performance.now();
 
@@ -374,7 +377,7 @@ export default function GameCanvas({
       for (const p of s.popups) {
         const t = p.life / 1.1;
         ctx.globalAlpha = 1 - t * t;
-        ctx.font = `800 ${20 + (1 - t) * 6}px var(--font-unbounded), system-ui`;
+        ctx.font = `800 ${20 + (1 - t) * 6}px ${displayFont}`;
         ctx.textAlign = "center";
         ctx.lineWidth = 4;
         ctx.strokeStyle = "rgba(20,12,4,0.8)";
@@ -463,7 +466,7 @@ export default function GameCanvas({
       }
 
       // Подпись силы
-      c.font = "700 15px var(--font-unbounded), system-ui";
+      c.font = `700 15px ${displayFont}`;
       c.textAlign = "center";
       c.lineWidth = 4;
       c.strokeStyle = "rgba(15,10,5,0.85)";

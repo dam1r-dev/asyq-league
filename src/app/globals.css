@@ -33,7 +33,7 @@
   --color-bad: var(--bad);
   --color-chalk: var(--chalk);
   --font-sans: var(--font-onest);
-  --font-display: var(--font-unbounded);
+  --font-display: var(--font-montserrat);
 }
 
 html {

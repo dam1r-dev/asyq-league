@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Onest, Unbounded } from "next/font/google";
+import { Montserrat, Onest } from "next/font/google";
 import { AccountProvider } from "@/components/AccountProvider";
 import Header from "@/components/Header";
 import "./globals.css";
 
 const onest = Onest({ variable: "--font-onest", subsets: ["latin", "cyrillic", "cyrillic-ext"] });
-const unbounded = Unbounded({
-  variable: "--font-unbounded",
+// Montserrat — в нём есть все казахские буквы (ә, ғ, қ, ң, ө, ұ, ү, һ, і).
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: ["500", "700", "800"],
+  weight: ["600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${onest.variable} ${unbounded.variable} h-full antialiased`}>
+    <html lang="ru" className={`${onest.variable} ${montserrat.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <AccountProvider>
           <Header />

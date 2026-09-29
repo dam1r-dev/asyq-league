@@ -156,7 +156,7 @@ npm test                    # тесты физики, правил и бала�
 
 ## Технологии
 - **Next.js 16** (App Router, Route Handlers), **React 19**, **TypeScript**
-- **Tailwind CSS 4**, шрифты Onest и Unbounded (Google Fonts через `next/font`)
+- **Tailwind CSS 4**, шрифты Onest и Montserrat (оба с полным казахским алфавитом) (Google Fonts через `next/font`)
 - **Canvas 2D** для игры, **Web Audio API** для звука, **Pointer Events** для управления
 - **Prisma 7** + `@prisma/adapter-libsql`, **Turso** (libSQL)
 - `jose` (JWT), `bcryptjs` (пароли), `zod` (валидация)
