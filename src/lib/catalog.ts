@@ -121,7 +121,9 @@ export const CATALOG: ShopItem[] = [
   { id: "outfit-sauyt", kind: "outfit", name: "Батыр сауыты", description: "", price: 450 },
   // ——— Головные уборы
   { id: "hat-none", kind: "hat", name: "—", description: "", price: 0 },
-  { id: "hat-taqiya", kind: "hat", name: "Тақия", description: "", price: 0 },
+  { id: "hat-taqiya", kind: "hat", name: "Ою тақия", description: "", price: 0 },
+  { id: "hat-taqiya-kiiz", kind: "hat", name: "Киіз тақия", description: "", price: 60 },
+  { id: "hat-taqiya-zer", kind: "hat", name: "Зерлі тақия", description: "", price: 250 },
   { id: "hat-borik", kind: "hat", name: "Бөрік", description: "", price: 120 },
   { id: "hat-tymaq", kind: "hat", name: "Тымақ", description: "", price: 180 },
   { id: "hat-saukele", kind: "hat", name: "Сәукеле", description: "", price: 300 },

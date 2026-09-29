@@ -13,7 +13,7 @@ export const HAIR_STYLES = ["short", "long", "braids", "bald"] as const;
 export type HairStyle = (typeof HAIR_STYLES)[number];
 
 export const OUTFITS = ["outfit-simple", "outfit-kamzol", "outfit-shapan", "outfit-koilek", "outfit-ton", "outfit-sauyt"] as const;
-export const HATS = ["hat-none", "hat-taqiya", "hat-borik", "hat-tymaq", "hat-saukele", "hat-dulygha"] as const;
+export const HATS = ["hat-none", "hat-taqiya", "hat-taqiya-kiiz", "hat-taqiya-zer", "hat-borik", "hat-tymaq", "hat-saukele", "hat-dulygha"] as const;
 export const COLORS = [
   "color-green",
   "color-blue",

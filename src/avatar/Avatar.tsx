@@ -270,17 +270,66 @@ function Body({
 
 function Hat({ hat, c, cDark }: { hat: AvatarConfig["hat"]; c: string; cDark: string }) {
   switch (hat) {
-    case "hat-taqiya":
+    case "hat-taqiya": {
+      // Ою тақия: низкий бархатный конус и полоса орнамента-завитков.
+      const light = shade(c, 0.45);
       return (
         <g>
-          <path d="M66 66 Q66 34 100 32 Q134 34 134 66 Z" fill={c} />
-          <path d="M66 66 H134" stroke={GOLD} strokeWidth={4} />
-          {[80, 92, 108, 120].map((x) => (
-            <circle key={x} cx={x} cy={52} r={2.6} fill={GOLD} />
+          <path d="M62 58 Q66 36 100 20 Q134 36 138 58 Z" fill={c} />
+          <path d="M100 20 Q90 36 86 58" fill="none" stroke={shade(c, 0.15)} strokeWidth={3} opacity={0.6} />
+          <path d="M61 54 H139 L140 70 Q100 75 60 70 Z" fill={cDark} />
+          <path d="M62 56 H138 M61 68 Q100 73 139 68" stroke={light} strokeWidth={1.4} fill="none" />
+          {[68, 80, 92, 104, 116, 128].map((x) => (
+            <path
+              key={x}
+              d={`M${x} 64 q0 -5 4 -5 q4 0 4 4 q0 3 -3 3 q-2 0 -2 -2`}
+              fill="none"
+              stroke={light}
+              strokeWidth={1.6}
+              strokeLinecap="round"
+            />
           ))}
-          <circle cx={100} cy={42} r={3.2} fill={GOLD} />
         </g>
       );
+    }
+    case "hat-taqiya-kiiz":
+      // Киіз тақия: простая плоская войлочная шапочка.
+      return (
+        <g>
+          <path d="M63 68 L66 32 Q100 26 134 32 L137 68 Q100 73 63 68 Z" fill={c} />
+          <ellipse cx={100} cy={32} rx={34} ry={6} fill={shade(c, 0.12)} />
+          <path d="M66 36 Q100 42 134 36" fill="none" stroke={cDark} strokeWidth={1.2} opacity={0.6} />
+          <path d="M63 66 Q100 71 137 66" fill="none" stroke={cDark} strokeWidth={2} opacity={0.7} />
+        </g>
+      );
+    case "hat-taqiya-zer": {
+      // Зерлі тақия: чёрный бархат, золотое шитьё и меандр по низу.
+      const ZER = "#d9a63a";
+      return (
+        <g>
+          <path d="M63 68 L66 32 Q100 26 134 32 L137 68 Q100 73 63 68 Z" fill="#1c1916" />
+          <ellipse cx={100} cy={32} rx={34} ry={6} fill="#26211d" stroke={ZER} strokeWidth={1.2} />
+          {/* Золотые листья и завитки */}
+          {[74, 90, 110, 126].map((x, i) => (
+            <g key={x} fill={ZER}>
+              <ellipse cx={x} cy={44} rx={6} ry={2.6} transform={`rotate(${i % 2 ? 35 : -35} ${x} 44)`} />
+              <ellipse cx={x + 5} cy={50} rx={4.5} ry={2} transform={`rotate(${i % 2 ? -30 : 30} ${x + 5} 50)`} />
+            </g>
+          ))}
+          <path d="M70 40 q8 -6 14 0 t14 0 t14 0 t14 0 t14 0" fill="none" stroke={ZER} strokeWidth={1.3} />
+          <circle cx={100} cy={32} r={3} fill={ZER} />
+          {/* Меандр */}
+          <path d="M63 56 H137" stroke={ZER} strokeWidth={1.4} />
+          <path
+            d="M65 66 v-7 h5 v4 h-2.5 M73 66 v-7 h5 v4 h-2.5 M81 66 v-7 h5 v4 h-2.5 M89 66 v-7 h5 v4 h-2.5 M97 66 v-7 h5 v4 h-2.5 M105 66 v-7 h5 v4 h-2.5 M113 66 v-7 h5 v4 h-2.5 M121 66 v-7 h5 v4 h-2.5 M129 66 v-7 h5 v4 h-2.5"
+            fill="none"
+            stroke={ZER}
+            strokeWidth={1.3}
+          />
+          <path d="M63 68 Q100 73 137 68" fill="none" stroke={ZER} strokeWidth={1.6} />
+        </g>
+      );
+    }
     case "hat-borik":
       return (
         <g>
