@@ -7,10 +7,11 @@ import { LANG_LABEL, LANGS } from "@/i18n/config";
 import { applyTheme, currentTheme, useI18n } from "@/i18n/provider";
 import { useAccount } from "./AccountProvider";
 import AsyqMark from "./AsyqMark";
+import Avatar from "@/avatar/Avatar";
 
 export default function Header() {
   const pathname = usePathname();
-  const { me, loading } = useAccount();
+  const { me, loading, avatar, coins } = useAccount();
   const { t } = useI18n();
 
   const NAV = [
@@ -49,11 +50,12 @@ export default function Header() {
           <LangMenu />
           <Link
             href={me ? "/profile" : "/auth"}
-            className={`ml-0.5 flex h-9 items-center rounded-xl border border-line px-2 text-sm font-semibold sm:px-2.5 ${
+            className={`ml-0.5 flex h-9 items-center gap-1.5 rounded-xl border border-line pr-2 pl-1 text-sm font-semibold sm:pr-2.5 ${
               pathname.startsWith("/profile") || pathname.startsWith("/auth") ? "bg-surface-2" : "bg-surface"
             }`}
           >
-            {loading ? "…" : me ? <span className="max-w-[64px] truncate sm:max-w-[120px]">{me.displayName}</span> : t("nav.login")}
+            <Avatar config={avatar} variant="head" className="h-7 w-7 shrink-0 rounded-full bg-surface-2" />
+            {loading ? "…" : me ? <span className="font-display text-xs">🪙{coins}</span> : t("nav.login")}
           </Link>
         </nav>
       </div>

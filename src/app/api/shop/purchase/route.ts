@@ -3,17 +3,14 @@ import { z } from "zod";
 import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { getItem } from "@/lib/catalog";
+import { balance } from "@/lib/coins";
 import { prisma } from "@/lib/prisma";
 
 /**
- * ТЕСТОВЫЙ РЕЖИМ. Деньги не списываются: сервер лишь проверяет тестовую
- * карту 4242 4242 4242 4242 и выдаёт предмет, как это сделал бы настоящий
- * платёжный вебхук. Ни один предмет не влияет на физику и очки.
+ * Покупка предмета за тиыны. Ни один предмет не влияет на физику и очки.
+ * Купленный скин или элемент одежды сразу надевается.
  */
-const schema = z.object({
-  itemId: z.string().max(40),
-  card: z.string().max(30),
-});
+const schema = z.object({ itemId: z.string().max(40) });
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
@@ -22,16 +19,17 @@ export const POST = safe(async (req: Request) => {
   if (!body) return fail("badData");
 
   const item = getItem(body.itemId);
-  if (!item || item.priceKzt === 0) return fail("notForSale");
-  if (body.card.replace(/\s/g, "") !== "4242424242424242")
-    return fail("testCard", 402);
+  if (!item || item.price <= 0 || item.kind === "coins") return fail("notForSale");
+  const owned = await prisma.purchase.findUnique({ where: { userId_itemId: { userId: user.id, itemId: item.id } } });
+  if (owned) return NextResponse.json({ ok: true, itemId: item.id });
+  if ((await balance(user.id)) < item.price) return fail("notEnoughCoins", 402);
 
-  await prisma.purchase.upsert({
-    where: { userId_itemId: { userId: user.id, itemId: item.id } },
-    update: {},
-    create: { userId: user.id, itemId: item.id, priceKzt: item.priceKzt, testMode: true },
-  });
-  // Купленный скин сразу надеваем — пользователь видит результат покупки.
+  await prisma.$transaction([
+    prisma.purchase.create({ data: { userId: user.id, itemId: item.id, priceKzt: item.price, testMode: false } }),
+    prisma.coinTx.create({
+      data: { userId: user.id, amount: -item.price, reason: "purchase", refKey: `purchase:${user.id}:${item.id}` },
+    }),
+  ]);
   if (item.kind === "saqa") await prisma.user.update({ where: { id: user.id }, data: { saqaSkin: item.id } });
   if (item.kind === "field") await prisma.user.update({ where: { id: user.id }, data: { fieldSkin: item.id } });
   return NextResponse.json({ ok: true, itemId: item.id });

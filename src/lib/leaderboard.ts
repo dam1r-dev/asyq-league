@@ -2,6 +2,7 @@ import "server-only";
 import { almatyDayKey } from "@/game/daily";
 import { LEVELS } from "@/game/levels";
 import { prisma } from "./prisma";
+import { parseAvatar, type AvatarConfig } from "@/avatar/config";
 
 export interface Row {
   name: string;
@@ -9,12 +10,13 @@ export interface Row {
   value: number;
   players?: number;
   userId?: string;
+  avatar?: AvatarConfig;
 }
 
 async function usersById(ids: string[]) {
   const users = await prisma.user.findMany({
     where: { id: { in: ids } },
-    select: { id: true, displayName: true, university: true },
+    select: { id: true, displayName: true, university: true, avatar: true },
   });
   return new Map(users.map((u) => [u.id, u]));
 }
@@ -33,6 +35,7 @@ export async function dayBoard(dayKey = almatyDayKey()): Promise<Row[]> {
     userId: b.userId,
     name: users.get(b.userId)?.displayName ?? "—",
     university: users.get(b.userId)?.university ?? null,
+    avatar: parseAvatar(users.get(b.userId)?.avatar),
     value: b._max.score ?? 0,
   }));
 }
@@ -79,6 +82,7 @@ export async function mastersBoard(): Promise<Row[]> {
     userId: id,
     name: users.get(id)?.displayName ?? "—",
     university: users.get(id)?.university ?? null,
+    avatar: parseAvatar(users.get(id)?.avatar),
     value: stars,
   }));
 }

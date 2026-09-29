@@ -32,10 +32,8 @@ export function verifyAttempt(body: AttemptBody, owned: Set<string>):
 
   if (body.kind === "daily") {
     if (!body.dayKey || !isDayKey(body.dayKey)) return { ok: false, error: "badDay" };
-    const today = almatyDayKey();
-    const yesterday = almatyDayKey(new Date(Date.now() - 24 * 3600 * 1000));
-    if (body.dayKey !== today && body.dayKey !== yesterday)
-      return { ok: false, error: "dayClosed" };
+    // Засчитываем только сегодняшний турнир: вчерашний уже закрыт и награждён.
+    if (body.dayKey !== almatyDayKey()) return { ok: false, error: "dayClosed" };
     dayKey = body.dayKey;
     level = dailyLevel(dayKey);
   } else {

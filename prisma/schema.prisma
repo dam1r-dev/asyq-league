@@ -15,9 +15,12 @@ model User {
   university   String?
   saqaSkin     String     @default("saqa-classic")
   fieldSkin    String     @default("field-aula")
+  /// Внешность персонажа (JSON): кожа, глаза, волосы, одежда, головной убор, цвет.
+  avatar       String?
   createdAt    DateTime   @default(now())
   attempts     Attempt[]
   purchases    Purchase[]
+  coins        CoinTx[]
 }
 
 /// Один сыгранный раунд. Храним броски, а очки пересчитывает сервер.
@@ -49,9 +52,25 @@ model Purchase {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemId    String
+  /// Цена в тиынах (внутриигровая валюта).
   priceKzt  Int
   testMode  Boolean  @default(true)
   createdAt DateTime @default(now())
 
   @@unique([userId, itemId])
+}
+
+/// Движение тиынов (внутриигровой валюты). Баланс = сумма amount.
+/// refKey уникален, поэтому одну и ту же награду нельзя получить дважды.
+model CoinTx {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  /// welcome | star | daily-play | daily-rank | purchase | topup
+  reason    String
+  refKey    String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

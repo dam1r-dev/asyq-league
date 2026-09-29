@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { ownedItems } from "@/lib/me";
 import { prisma } from "@/lib/prisma";
 import { attemptSchema, verifyAttempt } from "@/lib/verify";
+import { award, balance, REWARDS } from "@/lib/coins";
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
@@ -36,6 +37,16 @@ export const POST = safe(async (req: Request) => {
   });
   const best = agg._max.score ?? state.score;
 
+  // Тиыны: за каждую новую звезду уровня (один раз за звезду) и за участие
+  // в турнире дня (один раз в день).
+  let earned = 0;
+  if (body.kind === "level") {
+    for (let s = 1; s <= state.stars; s++)
+      if (await award(user.id, REWARDS.star, "star", `star:${user.id}:${level.id}:${s}`)) earned += REWARDS.star;
+  } else if (dayKey) {
+    if (await award(user.id, REWARDS.dailyPlay, "daily-play", `daily-play:${user.id}:${dayKey}`)) earned += REWARDS.dailyPlay;
+  }
+
   let rank: number | undefined;
   if (dayKey) {
     // Место в рейтинге дня = сколько игроков имеют лучший результат выше.
@@ -48,5 +59,13 @@ export const POST = safe(async (req: Request) => {
     rank = better.length + 1;
   }
 
-  return NextResponse.json({ score: state.score, stars: state.stars, won: state.status === "won", best, rank });
+  return NextResponse.json({
+    score: state.score,
+    stars: state.stars,
+    won: state.status === "won",
+    best,
+    rank,
+    earned,
+    coins: await balance(user.id),
+  });
 });

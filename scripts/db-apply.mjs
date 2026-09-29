@@ -44,4 +44,10 @@ if (demo.rows.length === 0) {
   });
   console.log("[db-apply] создан тестовый аккаунт demo / asyq2026");
 }
+// Стартовые тиыны для тестового аккаунта — чтобы проверяющие могли сразу
+// купить и примерить костюмы (refKey уникален, второй раз не начислится).
+await db.execute({
+  sql: 'INSERT OR IGNORE INTO "CoinTx" (id, userId, amount, reason, refKey, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+  args: ["demo-welcome", "demo-user", 1000, "welcome", "welcome:demo-user", new Date().toISOString()],
+});
 console.log("[db-apply] готово");

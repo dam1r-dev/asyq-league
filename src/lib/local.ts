@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import type { ThrowInput } from "@/game/types";
 import { DEFAULT_FIELD, DEFAULT_SAQA } from "./catalog";
+import { DEFAULT_AVATAR, type AvatarConfig } from "@/avatar/config";
 
 /**
  * Локальное хранилище в браузере. Работает и для гостя, и как кэш для
@@ -35,6 +36,8 @@ export interface LocalData {
     saqa: string;
     field: string;
     tutorialDone: boolean;
+    /** Персонаж гостя (только бесплатные части). */
+    avatar: AvatarConfig;
   };
 }
 
@@ -44,7 +47,7 @@ const EMPTY: LocalData = {
   levels: {},
   daily: {},
   history: [],
-  settings: { sound: true, saqa: DEFAULT_SAQA, field: DEFAULT_FIELD, tutorialDone: false },
+  settings: { sound: true, saqa: DEFAULT_SAQA, field: DEFAULT_FIELD, tutorialDone: false, avatar: DEFAULT_AVATAR },
 };
 
 let cache: LocalData | null = null;

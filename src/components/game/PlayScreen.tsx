@@ -31,7 +31,7 @@ export interface PlayScreenProps {
 
 export type SubmitState =
   | { status: "idle" | "saving" | "guest" }
-  | { status: "saved"; best: number; rank?: number }
+  | { status: "saved"; best: number; rank?: number; earned?: number }
   | { status: "error"; message: string };
 
 /** Раунд читает сохранение из localStorage, поэтому рендерится только в браузере. */
@@ -55,7 +55,7 @@ function restoreRound(level: LevelDef, roundKey: string) {
 
 function PlayScreenInner(props: PlayScreenProps) {
   const { level, mode, roundKey, dayKey, backHref } = props;
-  const { me, saqaSkin, fieldSkin } = useAccount();
+  const { me, saqaSkin, fieldSkin, refresh } = useAccount();
   const local = useLocal();
   // Незаконченный раунд восстанавливается из браузера (после перезагрузки).
   const [restored] = useState(() => restoreRound(level, roundKey));
@@ -106,12 +106,13 @@ function PlayScreenInner(props: PlayScreenProps) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(errorText(data.error, t, t("play.saveError")));
-        setSubmit({ status: "saved", best: data.best, rank: data.rank });
+        setSubmit({ status: "saved", best: data.best, rank: data.rank, earned: data.earned });
+        if (data.earned) void refresh();
       } catch (e) {
         setSubmit({ status: "error", message: e instanceof Error ? e.message : t("play.netError") });
       }
     },
-    [dayKey, level, me, mode, roundKey, t],
+    [dayKey, level, me, mode, roundKey, t, refresh],
   );
 
   const onThrowEnd = useCallback(

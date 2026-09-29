@@ -1,16 +1,19 @@
 import "server-only";
 import { prisma } from "./prisma";
 import type { User } from "@/generated/prisma/client";
+import { parseAvatar } from "@/avatar/config";
+import { balance } from "./coins";
 
 /** Профиль для клиента: без хэша пароля, с покупками и лучшими результатами. */
 export async function serializeMe(user: User) {
-  const [purchases, best] = await Promise.all([
+  const [purchases, best, coins] = await Promise.all([
     prisma.purchase.findMany({ where: { userId: user.id }, select: { itemId: true } }),
     prisma.attempt.groupBy({
       by: ["levelId"],
       where: { userId: user.id, kind: "level" },
       _max: { score: true, stars: true },
     }),
+    balance(user.id),
   ]);
   const progress: Record<string, { best: number; stars: number }> = {};
   for (const b of best) progress[b.levelId] = { best: b._max.score ?? 0, stars: b._max.stars ?? 0 };
@@ -21,6 +24,8 @@ export async function serializeMe(user: User) {
     university: user.university,
     saqaSkin: user.saqaSkin,
     fieldSkin: user.fieldSkin,
+    avatar: parseAvatar(user.avatar),
+    coins,
     owned: purchases.map((p) => p.itemId),
     progress,
   };

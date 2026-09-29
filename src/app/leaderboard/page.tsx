@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
 import { useT } from "@/i18n/provider";
+import Avatar from "@/avatar/Avatar";
+import type { AvatarConfig } from "@/avatar/config";
 
 type Tab = "day" | "uni" | "masters";
 interface Row {
@@ -12,6 +14,7 @@ interface Row {
   value: number;
   players?: number;
   userId?: string;
+  avatar?: AvatarConfig;
 }
 
 const TABS: { id: Tab; label: string; hint: string; unit: string }[] = [
@@ -68,6 +71,7 @@ export default function LeaderboardPage() {
         ))}
       </div>
       <p className="mt-3 text-sm text-muted">{t(info.hint)}</p>
+      {tab === "day" && <p className="mt-1 text-sm font-semibold text-gold">{t("leaderboard.prizes")}</p>}
 
       <ol className="card mt-3 divide-y divide-line">
         {!rows && <li className="p-4 text-sm text-muted">{t("common.loading")}</li>}
@@ -92,6 +96,7 @@ export default function LeaderboardPage() {
               <span className={`relative w-7 font-display font-bold ${i < 3 ? "text-gold" : "text-muted"}`}>
                 {i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}
               </span>
+              {r.avatar && <Avatar config={r.avatar} variant="head" className="relative h-9 w-9 shrink-0 rounded-full bg-surface-2" />}
               <div className="relative min-w-0 flex-1">
                 <div className="truncate font-semibold">
                   {r.name === "Другой" ? t("uni.other") : r.name}

@@ -6,6 +6,7 @@ import { getItem, isFree } from "@/lib/catalog";
 import { serializeMe, ownedItems } from "@/lib/me";
 import { prisma } from "@/lib/prisma";
 import { UNIVERSITIES } from "@/lib/universities";
+import { avatarSchema, paidParts } from "@/avatar/config";
 
 export async function GET() {
   try {
@@ -22,6 +23,7 @@ const patchSchema = z.object({
   university: z.enum(UNIVERSITIES).nullable().optional(),
   saqaSkin: z.string().max(40).optional(),
   fieldSkin: z.string().max(40).optional(),
+  avatar: avatarSchema.optional(),
 });
 
 export const PATCH = safe(async (req: Request) => {
@@ -42,6 +44,14 @@ export const PATCH = safe(async (req: Request) => {
     if (!isFree(id) && !owned.has(id)) return fail("notOwned", 403);
   }
 
-  const updated = await prisma.user.update({ where: { id: user.id }, data: body });
+  // Костюм, головной убор и цвет можно надеть, только если они куплены.
+  if (body.avatar)
+    for (const part of paidParts(body.avatar)) if (!isFree(part) && !owned.has(part)) return fail("notOwned", 403);
+
+  const { avatar, ...rest } = body;
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: { ...rest, ...(avatar ? { avatar: JSON.stringify(avatar) } : {}) },
+  });
   return NextResponse.json({ me: await serializeMe(updated) });
 });

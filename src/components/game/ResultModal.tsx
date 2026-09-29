@@ -107,6 +107,9 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
             {submit.status === "saving" && t("result.saving")}
             {submit.status === "saved" &&
               `${t("result.saved")}${submit.rank ? t("result.rank", { n: submit.rank }) : ""}`}
+            {submit.status === "saved" && !!submit.earned && (
+              <div className="mt-1 font-display text-sm font-bold text-gold">{t("coins.earned", { n: submit.earned })}</div>
+            )}
             {submit.status === "error" && <span className="text-bad">{submit.message}</span>}
             {submit.status === "guest" && (
               <>

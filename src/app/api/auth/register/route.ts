@@ -5,6 +5,7 @@ import { fail, safe } from "@/lib/api";
 import { createSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UNIVERSITIES } from "@/lib/universities";
+import { award, REWARDS } from "@/lib/coins";
 
 const schema = z.object({
   username: z
@@ -27,6 +28,8 @@ export const POST = safe(async (req: Request) => {
   const user = await prisma.user.create({
     data: { username, displayName, university, passwordHash: await bcrypt.hash(password, 10) },
   });
+  // Приветственные тиыны — чтобы сразу было что примерить в магазине.
+  await award(user.id, REWARDS.welcome, "welcome", `welcome:${user.id}`);
   await createSession(user.id);
   return NextResponse.json({ ok: true });
 });

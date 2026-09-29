@@ -10,6 +10,7 @@ import { UNIVERSITIES } from "@/lib/universities";
 import { useI18n } from "@/i18n/provider";
 import { levelSubtitle } from "@/i18n/game";
 import { LANG_LOCALE } from "@/i18n/config";
+import Avatar from "@/avatar/Avatar";
 
 interface HistoryData {
   recent: {
@@ -29,7 +30,7 @@ interface HistoryData {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { me, loading, refresh } = useAccount();
+  const { me, loading, refresh, coins } = useAccount();
   const { t, lang } = useI18n();
   const [history, setHistory] = useState<HistoryData | null>(null);
   const [saving, setSaving] = useState(false);
@@ -83,14 +84,23 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pt-6 pb-16">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold">{me.displayName}</h1>
+      <div className="card flex items-center gap-4 p-4">
+        <Link href="/avatar" className="shrink-0 rounded-2xl bg-surface-2 p-2" aria-label={t("avatar.edit")}>
+          <Avatar config={me.avatar} className="h-36 w-auto" title={me.displayName} />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-2xl font-bold">{me.displayName}</h1>
           <p className="text-sm text-muted">@{me.username}</p>
+          <div className="mt-2 font-display text-lg font-bold text-gold">🪙 {coins}</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/avatar" className="btn btn-primary !px-3 !py-2 text-sm">
+              {t("avatar.edit")}
+            </Link>
+            <button className="btn btn-ghost !px-3 !py-2 text-sm" onClick={logout}>
+              {t("profile.logout")}
+            </button>
+          </div>
         </div>
-        <button className="btn btn-ghost !py-2 text-sm" onClick={logout}>
-          {t("profile.logout")}
-        </button>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
