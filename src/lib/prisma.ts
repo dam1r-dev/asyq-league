@@ -7,7 +7,8 @@ function createPrismaClient() {
   // Prisma 7 работает только через driver adapter. Локально это файл SQLite,
   // в деплое — Turso (тот же libSQL), меняются только переменные окружения.
   const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL ?? "file:./dev.db",
+    // TURSO_DATABASE_URL — так переменную называет интеграция Turso в Vercel.
+    url: process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL ?? "file:./dev.db",
     authToken: process.env.TURSO_AUTH_TOKEN || undefined,
   });
   return new PrismaClient({ adapter });
