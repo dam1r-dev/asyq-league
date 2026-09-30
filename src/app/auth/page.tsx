@@ -17,17 +17,17 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e: React.FormEvent, override?: { username: string; password: string }) => {
+  const submit = async (e: React.FormEvent, demo?: boolean) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const body =
-      override ??
-      (mode === "login"
+    const body = demo
+      ? {}
+      : (mode === "login"
         ? { username: form.username, password: form.password }
         : { ...form, university: form.university || undefined });
     try {
-      const res = await fetch(`/api/auth/${override ? "login" : mode}`, {
+      const res = await fetch(`/api/auth/${demo ? "demo" : mode}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
@@ -118,13 +118,13 @@ export default function AuthPage() {
       <div className="card mt-4 border-sky/30 p-4 text-sm">
         <div className="font-semibold">{t("auth.reviewers")}</div>
         <p className="mt-1 text-muted">
-          {t("auth.demo")} <code className="text-text">demo</code> / <code className="text-text">asyq2026</code>
+          {t("auth.demo")}
         </p>
         <button
           type="button"
           className="btn btn-ghost mt-3 w-full !py-2"
           disabled={busy}
-          onClick={(e) => submit(e, { username: "demo", password: "asyq2026" })}
+          onClick={(e) => submit(e, true)}
         >
           {t("auth.demoButton")}
         </button>

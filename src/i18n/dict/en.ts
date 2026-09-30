@@ -417,7 +417,7 @@ const en: Dict = {
     submitLogin: "Log in",
     submitRegister: "Create account",
     reviewers: "For reviewers",
-    demo: "Test account:",
+    demo: "The button creates your own temporary account with 1000 🪙, so other reviewers' spending won't affect you. Shared login: demo / asyq2026 (balance is topped up to 1000 on every login).",
     demoButton: "Log in as demo",
     serverDown: "Server unavailable",
   },
