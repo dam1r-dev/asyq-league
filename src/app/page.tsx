@@ -50,7 +50,7 @@ export default function Home() {
             href="/levels"
             icon="🎯"
             title={t("home.modes.levels")}
-            text={t("home.modes.levelsText", { stars: totalStars })}
+            text={t("home.modes.levelsText", { stars: totalStars, total: LEVELS.length * 3, count: LEVELS.length })}
             accent
           />
           <ModeCard
@@ -73,6 +73,7 @@ export default function Home() {
             title={t("home.modes.league")}
             text={t("home.modes.leagueText")}
           />
+          <ModeCard href="/history" icon="📜" title={t("home.modes.history")} text={t("home.modes.historyText")} />
           <ModeCard href="/shop" icon="🎨" title={t("home.modes.shop")} text={t("home.modes.shopText")} />
         </div>
       </section>

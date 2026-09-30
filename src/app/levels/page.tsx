@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAccount } from "@/components/AccountProvider";
-import { LEGEND_LEVELS, LEVELS } from "@/game/levels";
+import { CHAPTERS, LEGEND_LEVELS, LEVELS } from "@/game/levels";
 import type { LevelDef } from "@/game/types";
 import { useLocal } from "@/lib/local";
 import { useT } from "@/i18n/provider";
@@ -26,15 +26,31 @@ export default function LevelsPage() {
           <h1 className="font-display text-2xl font-bold">{t("levelsPage.title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("levelsPage.lead")}</p>
         </div>
-        <div className="chip !text-sm">⭐ {total}/36</div>
+        <div className="chip !text-sm">⭐ {total}/{LEVELS.length * 3}</div>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {LEVELS.map((l, i) => {
-          const unlocked = i === 0 || rec(LEVELS[i - 1].id).stars > 0;
-          return <LevelCard key={l.id} level={l} index={i + 1} unlocked={unlocked} {...rec(l.id)} />;
-        })}
-      </div>
+      {CHAPTERS.map((ch) => (
+        <section key={ch.id} className="mt-6">
+          <h2 className="font-display text-lg font-bold">{t(`levelsPage.ch${ch.id}`)}</h2>
+          <p className="text-sm text-muted">{t(`levelsPage.ch${ch.id}Text`)}</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {ch.levels.map((l) => {
+              const i = LEVELS.indexOf(l);
+              const unlocked = i === 0 || rec(LEVELS[i - 1].id).stars > 0;
+              return <LevelCard key={l.id} level={l} index={i + 1} unlocked={unlocked} {...rec(l.id)} />;
+            })}
+          </div>
+        </section>
+      ))}
+
+      <Link href="/history" className="card mt-8 flex items-center gap-4 border-gold/40 p-4 transition-colors hover:border-gold">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-2xl">📜</div>
+        <div className="flex-1">
+          <div className="font-display font-bold">{t("levelsPage.historyTitle")}</div>
+          <div className="text-sm text-muted">{t("levelsPage.historyText")}</div>
+        </div>
+        <span className="text-muted">→</span>
+      </Link>
 
       <div className="mt-10 flex items-end justify-between gap-4">
         <div>
@@ -83,7 +99,8 @@ function LevelCard({
       <LevelPreview level={level} dim={!unlocked} />
       <div className="font-display text-sm font-bold leading-tight">{levelTitle(level, t)}</div>
       <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted">{levelSubtitle(level, t)}</div>
-      {best > 0 && <div className="mt-1 text-xs text-gold">{t("levelsPage.record", { n: best })}</div>}
+      <div className="mt-1 text-[11px] text-muted">⭐⭐⭐ ≤ {level.par3} · {t("levelsPage.throwsMax", { n: level.throws })}</div>
+      {best > 0 && <div className="mt-0.5 text-xs text-gold">{t("levelsPage.record", { n: best })}</div>}
     </>
   );
   if (!unlocked)

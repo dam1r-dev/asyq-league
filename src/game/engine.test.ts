@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { V_MAX } from "./constants";
-import { challengeToLevel, decodeChallenge, encodeChallenge } from "./custom";
+import { challengeToLevel, decodeChallenge, encodeChallenge, validLayout } from "./custom";
 import { dailyLevel } from "./daily";
 import { duelThrow, initDuel } from "./duel";
 import { ALL_LEVELS, getLevel } from "./levels";
@@ -84,6 +84,21 @@ describe("физика", () => {
     let state = initRound(level);
     for (const i of inputs) state = applyThrow(state, i).state;
     expect(replayRound(level, inputs)).toEqual(state);
+  });
+});
+
+describe("расстановки уровней", () => {
+  for (const level of ALL_LEVELS) {
+    it(`${level.id}: асыки и камни внутри кона и не налезают друг на друга`, () => {
+      expect(validLayout(level.asyks, level.stones, level.kon)).toBe(true);
+    });
+  }
+
+  it("нормы звёзд возрастают: par3 ≤ par2 ≤ число бросков", () => {
+    for (const l of ALL_LEVELS) {
+      expect(l.par3).toBeLessThanOrEqual(l.par2);
+      expect(l.par2).toBeLessThanOrEqual(l.throws);
+    }
   });
 });
 

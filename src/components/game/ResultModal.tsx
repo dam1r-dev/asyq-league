@@ -9,6 +9,7 @@ import type { RoundState } from "@/game/types";
 import type { SubmitState } from "./PlayScreen";
 import { useT } from "@/i18n/provider";
 import { tipText } from "@/i18n/game";
+import { LEVELS } from "@/game/levels";
 
 interface Props {
   round: RoundState;
@@ -25,6 +26,9 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
   const { me } = useAccount();
   const t = useT();
   const stats = roundStats(round);
+  // У уровней второй главы свой исторический факт, у остальных — общие по кругу.
+  const levelIndex = Math.max(0, LEVELS.findIndex((l) => l.id === round.level.id));
+  const fact = t.maybe(`lvl.${round.level.id}.fact`) ?? t(`facts.f${(levelIndex % 6) + 1}`);
   const won = round.status === "won";
   const [shared, setShared] = useState<string | null>(null);
 
@@ -101,6 +105,13 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
           <span className="font-bold text-sky">{t("result.advice")} </span>
           {tipText(stats.advice, t)}
         </div>
+
+        {won && fact && (
+          <div className="mt-3 rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm leading-snug">
+            <span className="font-bold text-gold">{t("result.factTitle")} </span>
+            {fact}
+          </div>
+        )}
 
         {mode !== "custom" && (
           <div className="mt-3 text-center text-xs text-muted">

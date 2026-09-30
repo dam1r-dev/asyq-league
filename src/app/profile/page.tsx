@@ -104,8 +104,8 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Tile label={t("profile.stars")} value={`${stars}/36`} accent />
-        <Tile label={t("profile.cleared")} value={`${cleared}/12`} />
+        <Tile label={t("profile.stars")} value={`${stars}/${LEVELS.length * 3}`} accent />
+        <Tile label={t("profile.cleared")} value={`${cleared}/${LEVELS.length}`} />
         <Tile label={t("profile.knocked")} value={totals ? totals.knocked : "…"} />
         <Tile label={t("profile.perThrow")} value={totals && totals.throws ? (totals.knocked / totals.throws).toFixed(2) : "…"} />
       </div>
