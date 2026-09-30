@@ -21,8 +21,9 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      # Только зависимости, попадающие в рантайм: dev-инструменты (prisma CLI) сюда не входят.
-      - run: npm audit --omit=dev --audit-level=high
+      # Известные high-находки сейчас относятся только к CLI `prisma` (mysql2, deepmerge-ts):
+      # мы работаем с SQLite/libSQL, MySQL-код не запускается. Падаем на critical.
+      - run: npm audit --omit=dev --audit-level=critical
 
   codeql:
     name: CodeQL

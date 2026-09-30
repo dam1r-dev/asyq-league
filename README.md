@@ -228,7 +228,7 @@ scripts/         применение миграций на Turso, e2e-пров�
 | Бесконечные тиыны через публичную тест-карту | Не больше 3 пакетов в сутки на аккаунт; дорогие костюмы требуют ещё и звёзд |
 | Cookie и секреты | `__Host-` префикс, срок сессии 7 дней, сравнение токенов матча за постоянное время, предупреждение в логах, если `AUTH_SECRET` короче 32 символов |
 | Журналы | Структурные события (`auth_fail`, `rate_limited`, `server_error`) без паролей и токенов; клиент видит только код ошибки |
-| Зависимости | Dependabot и GitHub Actions (`npm audit --omit=dev`, CodeQL). `npm audit` без флага показывает dev-зависимость `prisma` CLI (mysql2/deepmerge-ts): в рантайме она не используется |
+| Зависимости | Dependabot и GitHub Actions (`npm audit --omit=dev --audit-level=critical`, CodeQL). `npm audit` без флага показывает dev-зависимость `prisma` CLI (mysql2/deepmerge-ts): в рантайме она не используется |
 
 **Сообщить об уязвимости:** [GitHub Security Advisories](https://github.com/dam1r-dev/asyq-league/security/advisories/new) (см. также `/.well-known/security.txt`).
 Общий логин `demo` / `asyq2026` публичен намеренно, в нём нет личных данных.
