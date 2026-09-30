@@ -301,6 +301,9 @@ function TestPayment({ item, onClose }: { item: ShopItem; onClose: () => void })
               <h2 className="font-display text-lg font-bold">{t("shop.payTitle")}</h2>
               <span className="chip !border-sky/40 !text-sky">{t("shop.testChip")}</span>
             </div>
+            <p className="mt-3 rounded-xl border border-sky/40 bg-sky/10 px-3 py-2 text-sm font-semibold" role="note">
+              {t("shop.testBanner")}
+            </p>
             <div className="mt-3 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2 text-sm">
               <span>🪙 {item.coins}</span>
               <b>{item.priceKzt} ₸</b>

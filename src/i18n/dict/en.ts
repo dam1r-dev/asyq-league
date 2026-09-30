@@ -510,6 +510,7 @@ const en: Dict = {
     trySkin: "Try it in the game",
     payTitle: "Payment",
     testChip: "TEST",
+    testBanner: "🧪 Payment test mode. No money is charged, the card is pre-filled.",
     card: "Card number",
     expiry: "Expiry",
     payNote: "Test mode: no real money is charged. Only the card 4242 4242 4242 4242 works.",
