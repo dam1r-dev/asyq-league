@@ -1,8 +1,9 @@
 import { safe } from "@/lib/api";
 import { NextResponse } from "next/server";
-import { destroySession } from "@/lib/auth";
+import { destroySession, revokeSessions } from "@/lib/auth";
 
 export const POST = safe(async () => {
+  await revokeSessions();
   await destroySession();
   return NextResponse.json({ ok: true });
 });

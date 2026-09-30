@@ -17,6 +17,8 @@ model User {
   fieldSkin    String     @default("field-aula")
   /// Внешность персонажа (JSON): кожа, глаза, волосы, одежда, головной убор, цвет.
   avatar       String?
+  /// Растёт при выходе: все ранее выданные токены перестают действовать.
+  sessionVersion Int      @default(0)
   createdAt    DateTime   @default(now())
   attempts     Attempt[]
   purchases    Purchase[]
@@ -73,6 +75,13 @@ model CoinTx {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// Счётчики ограничения частоты запросов (ключ = маршрут + IP/логин).
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
 }
 
 /// Онлайн-дуэль по ссылке. Хранятся только броски: состояние поля любой

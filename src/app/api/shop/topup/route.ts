@@ -6,6 +6,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getItem } from "@/lib/catalog";
 import { award } from "@/lib/coins";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 
 /**
  * ТЕСТОВЫЙ РЕЖИМ оплаты реальными деньгами: пакет тиынов.
@@ -17,6 +18,7 @@ const schema = z.object({ itemId: z.string().max(40), card: z.string().max(30) }
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("needLogin", 401);
+  if (!(await rateLimit(`topup:${user.id}`, 20, 3600))) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
   const item = getItem(body.itemId);

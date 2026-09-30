@@ -5,19 +5,29 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { createSession } from "@/lib/auth";
 import { award, balance } from "@/lib/coins";
 import { prisma } from "@/lib/prisma";
+import { limitedByIp, rateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({ username: z.string().trim().toLowerCase().max(40), password: z.string().max(100) });
 
+/** Хэш для несуществующих логинов: bcrypt выполняется всегда, время ответа не выдаёт, есть ли такой пользователь. */
+const DUMMY_HASH = bcrypt.hashSync("asyq-dummy-password", 10);
+
 export const POST = safe(async (req: Request) => {
+  if (await limitedByIp(req, "login", 15, 600)) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("enterCredentials");
+  // Отдельный лимит на логин против распределённого перебора (общий demo не блокируем).
+  if (body.username !== "demo" && !(await rateLimit(`login-user:${body.username}`, 10, 900))) return fail("tooMany", 429);
+
   const user = await prisma.user.findUnique({ where: { username: body.username } });
-  if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return fail("badCredentials", 401);
+  const ok = await bcrypt.compare(body.password, user?.passwordHash ?? DUMMY_HASH);
+  if (!user || !ok) return fail("badCredentials", 401);
+
   if (user.username === "demo") {
     // Общий тестовый аккаунт: каждый вход пополняет баланс до 1000 🪙.
     const have = await balance(user.id);
     if (have < 1000) await award(user.id, 1000 - have, "topup", `demo-refill:${user.id}:${Date.now()}`);
   }
-  await createSession(user.id);
+  await createSession(user.id, user.sessionVersion);
   return NextResponse.json({ ok: true });
 });

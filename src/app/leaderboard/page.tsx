@@ -13,7 +13,7 @@ interface Row {
   university: string | null;
   value: number;
   players?: number;
-  userId?: string;
+  mine?: boolean;
   avatar?: AvatarConfig;
 }
 
@@ -85,7 +85,7 @@ export default function LeaderboardPage() {
           </li>
         )}
         {rows?.map((r, i) => {
-          const mine = tab === "uni" ? me?.university === r.name : me?.id === r.userId;
+          const mine = tab === "uni" ? me?.university === r.name : !!r.mine;
           return (
             <li key={`${r.name}-${i}`} className={`relative flex items-center gap-3 px-4 py-3 ${mine ? "bg-gold/10" : ""}`}>
               <span

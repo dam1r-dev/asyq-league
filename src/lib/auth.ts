@@ -19,8 +19,8 @@ function secret() {
   return new TextEncoder().encode(s);
 }
 
-export async function createSession(userId: string) {
-  const token = await new SignJWT({ v: SESSION_VERSION })
+export async function createSession(userId: string, sessionVersion = 0) {
+  const token = await new SignJWT({ v: SESSION_VERSION, sv: sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()
@@ -39,20 +39,37 @@ export async function destroySession() {
   (await cookies()).delete(COOKIE);
 }
 
-export async function getSessionUserId(): Promise<string | null> {
+async function readToken(): Promise<{ id: string; sv: number } | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
     if (payload.v !== SESSION_VERSION || typeof payload.sub !== "string") return null;
-    return payload.sub;
+    return { id: payload.sub, sv: typeof payload.sv === "number" ? payload.sv : 0 };
   } catch {
     return null;
   }
 }
 
+/** Пользователь сессии; токен, выданный до выхода из аккаунта, не принимается. */
 export async function getSessionUser() {
-  const id = await getSessionUserId();
-  if (!id) return null;
-  return prisma.user.findUnique({ where: { id } });
+  const t = await readToken();
+  if (!t) return null;
+  const user = await prisma.user.findUnique({ where: { id: t.id } });
+  if (!user || user.sessionVersion !== t.sv) return null;
+  return user;
+}
+
+export async function getSessionUserId(): Promise<string | null> {
+  return (await getSessionUser())?.id ?? null;
+}
+
+/** Выход: отзываем все токены пользователя (кроме общего demo — им пользуются несколько человек). */
+export async function revokeSessions() {
+  const t = await readToken();
+  if (!t) return;
+  await prisma.user.updateMany({
+    where: { id: t.id, username: { not: "demo" }, sessionVersion: t.sv },
+    data: { sessionVersion: { increment: 1 } },
+  });
 }

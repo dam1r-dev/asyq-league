@@ -6,23 +6,29 @@ import { createSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UNIVERSITIES } from "@/lib/universities";
 import { award, REWARDS } from "@/lib/coins";
+import { isWeakPassword } from "@/lib/password";
+import { limitedByIp } from "@/lib/rateLimit";
 
 const schema = z.object({
   username: z
     .string()
     .trim()
     .toLowerCase()
-    .regex(/^[a-z0-9_]{3,20}$/, "badUsername"),
-  password: z.string().min(6, "shortPassword").max(100),
+    .regex(/^[a-z0-9_]{3,20}$/, "badUsername")
+    // Префикс demo зарезервирован за временными аккаунтами проверяющих.
+    .refine((u) => !u.startsWith("demo"), "usernameTaken"),
+  password: z.string().min(8, "shortPassword").max(100),
   displayName: z.string().trim().min(2, "shortName").max(20),
   university: z.enum(UNIVERSITIES).optional(),
 });
 
 export const POST = safe(async (req: Request) => {
+  if (await limitedByIp(req, "register", 8, 3600)) return fail("tooMany", 429);
   const raw = await req.json().catch(() => null);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "checkFields");
   const { username, password, displayName, university } = parsed.data;
+  if (isWeakPassword(password, username)) return fail("shortPassword");
 
   if (await prisma.user.findUnique({ where: { username } })) return fail("usernameTaken", 409);
   const user = await prisma.user.create({
@@ -30,6 +36,6 @@ export const POST = safe(async (req: Request) => {
   });
   // Приветственные тиыны — чтобы сразу было что примерить в магазине.
   await award(user.id, REWARDS.welcome, "welcome", `welcome:${user.id}`);
-  await createSession(user.id);
+  await createSession(user.id, user.sessionVersion);
   return NextResponse.json({ ok: true });
 });

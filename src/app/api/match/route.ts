@@ -4,11 +4,13 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUserId } from "@/lib/auth";
 import { cleanName, newCode, newToken } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
+import { limitedByIp } from "@/lib/rateLimit";
 
 const schema = z.object({ name: z.string().max(40) });
 
 /** Создать онлайн-дуэль. Возвращает код для ссылки и секрет хозяина. */
 export const POST = safe(async (req: Request) => {
+  if (await limitedByIp(req, "match-create", 30, 3600)) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
 

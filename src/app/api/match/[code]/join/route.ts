@@ -4,6 +4,7 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUserId } from "@/lib/auth";
 import { CODE_RE, cleanName, newToken, seatOf, settleTimeouts } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
+import { limitedByIp } from "@/lib/rateLimit";
 
 const schema = z.object({ name: z.string().max(40), token: z.string().max(60).optional() });
 
@@ -11,6 +12,8 @@ const schema = z.object({ name: z.string().max(40), token: z.string().max(60).op
 export const POST = safe(async (req: Request, ctx: RouteContext<"/api/match/[code]/join">) => {
   const { code } = await ctx.params;
   if (!CODE_RE.test(code)) return fail("matchNotFound", 404);
+  // Лимит против перебора кодов матчей.
+  if (await limitedByIp(req, "match-join", 60, 600)) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
   const found = await prisma.match.findUnique({ where: { code } });
