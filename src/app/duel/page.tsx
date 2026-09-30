@@ -8,6 +8,7 @@ import { sideName } from "@/i18n/game";
 import { useAccount } from "@/components/AccountProvider";
 import GameCanvas from "@/components/game/GameCanvas";
 import GameToolbar from "@/components/game/GameToolbar";
+import OnlineLobby from "@/components/game/OnlineLobby";
 import { DUEL_THROWS_EACH, duelThrow, initDuel, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { useLocal } from "@/lib/local";
@@ -52,6 +53,7 @@ function Duel() {
   const [duel, setDuel] = useState<DuelState | null>(restored?.duel ?? null);
   const [inputs, setInputs] = useState<ThrowInput[]>(restored?.inputs ?? []);
   const [runId, setRunId] = useState(0);
+  const [mode, setMode] = useState<"local" | "online">("local");
   const moveControl = local.settings.moveControl ?? "buttons";
 
   /** Начать эту же дуэль заново с теми же игроками. */
@@ -110,7 +112,23 @@ function Duel() {
         <p className="mt-2 text-sm text-muted">
           {t("duel.lead", { n: DUEL_THROWS_EACH })}
         </p>
-        <form onSubmit={start} className="card mt-6 grid gap-3 p-5">
+        <div className="mt-5 grid grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1" role="tablist">
+          {(["local", "online"] as const).map((m) => (
+            <button
+              key={m}
+              role="tab"
+              aria-selected={mode === m}
+              onClick={() => setMode(m)}
+              className={`rounded-xl py-2.5 text-sm font-semibold ${mode === m ? "bg-surface-2 text-text" : "text-muted"}`}
+            >
+              {m === "local" ? `📱 ${t("online.tabLocal")}` : `🌐 ${t("online.tabOnline")}`}
+            </button>
+          ))}
+        </div>
+        {mode === "online" ? (
+          <OnlineLobby />
+        ) : (
+        <form onSubmit={start} className="card mt-4 grid gap-3 p-5">
           <label className="grid gap-1 text-sm">
             <span className="text-muted">{t("duel.p1")}</span>
             <input
@@ -133,6 +151,7 @@ function Duel() {
           </label>
           <button className="btn btn-primary mt-2">{t("duel.start")}</button>
         </form>
+        )}
       </div>
     );
   }

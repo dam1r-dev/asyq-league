@@ -39,6 +39,11 @@ interface Props {
   /** Бросок сыгран до конца (все тела остановились). */
   onThrowEnd: (input: ThrowInput) => void;
   onThrowStart?: () => void;
+  /**
+   * Бросок соперника в онлайн-дуэли: холст сам проигрывает его с анимацией.
+   * Новый id — новый бросок.
+   */
+  remoteThrow?: { id: number; input: ThrowInput } | null;
   /** Как двигать сақа вдоль линии: стрелки ◀ ▶ или ползунок. */
   moveControl?: "buttons" | "slider";
   /** Заголовок/подпись поверх поля, например «Ход: Айдос». */
@@ -74,6 +79,7 @@ export default function GameCanvas({
   onThrowStart,
   overlay,
   moveControl = "buttons",
+  remoteThrow = null,
 }: Props) {
   const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -174,6 +180,17 @@ export default function GameCanvas({
     vibrate(10);
     propsRef.current.onThrowStart?.();
   }, []);
+
+  // Бросок соперника: запускаем ровно один раз для каждого id.
+  const lastRemote = useRef<number | null>(null);
+  useEffect(() => {
+    if (!remoteThrow || lastRemote.current === remoteThrow.id) return;
+    if (st.current.phase !== "aim") return;
+    lastRemote.current = remoteThrow.id;
+    st.current.aim = null;
+    setAiming(false);
+    launch(remoteThrow.input, Math.min(1, Math.hypot(remoteThrow.input.vx, remoteThrow.input.vy) / V_MAX));
+  }, [remoteThrow, launch]);
 
   // ——— Ввод: Pointer Events одинаково работают для мыши, пальца и стилуса.
   const onPointerDown = (e: React.PointerEvent) => {

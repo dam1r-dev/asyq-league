@@ -14,7 +14,8 @@ export default function GameToolbar({
   onRestart,
   restartDisabled,
 }: {
-  onRestart: () => void;
+  /** Без onRestart кнопки «Заново» нет (онлайн-матч перезапустить нельзя). */
+  onRestart?: () => void;
   restartDisabled?: boolean;
 }) {
   const t = useT();
@@ -25,15 +26,17 @@ export default function GameToolbar({
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 pb-2">
-        <ToolButton
-          icon="↺"
-          label={t("play.restartShort")}
-          title={t("play.restart")}
-          onClick={onRestart}
-          disabled={restartDisabled}
-          emphasis
-        />
+      <div className={`grid gap-2 pb-2 ${onRestart ? "grid-cols-4" : "grid-cols-3"}`}>
+        {onRestart && (
+          <ToolButton
+            icon="↺"
+            label={t("play.restartShort")}
+            title={t("play.restart")}
+            onClick={onRestart}
+            disabled={restartDisabled}
+            emphasis
+          />
+        )}
         <ToolButton
           icon={slider ? "━●━" : "◀ ▶"}
           label={slider ? t("play.ctrlSlider") : t("play.ctrlArrows")}

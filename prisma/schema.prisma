@@ -74,3 +74,32 @@ model CoinTx {
 
   @@index([userId])
 }
+
+/// Онлайн-дуэль по ссылке. Хранятся только броски: состояние поля любой
+/// клиент и сервер получают детерминированным проигрыванием этих бросков.
+model Match {
+  id          String   @id @default(cuid())
+  /// Короткий код из ссылки /m/CODE.
+  code        String   @unique
+  hostName    String
+  guestName   String?
+  /// Секреты игроков: по ним сервер узнаёт, кто делает ход.
+  hostToken   String
+  guestToken  String?
+  hostUserId  String?
+  guestUserId String?
+  /// JSON-массив бросков в порядке ходов.
+  inputs      String   @default("[]")
+  /// waiting | playing | finished
+  status      String   @default("waiting")
+  /// 0 — хозяин, 1 — гость, -1 — ничья.
+  winner      Int?
+  /// played | timeout | left
+  endReason   String?
+  /// Счётчик версий: защита от одновременных записей.
+  version     Int      @default(0)
+  lastMoveAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
