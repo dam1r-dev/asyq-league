@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import GameCanvas from "./GameCanvas";
+import GameToolbar from "./GameToolbar";
 import ResultModal from "./ResultModal";
 import { useAccount } from "@/components/AccountProvider";
 import { applyThrow, initRound, replayRound } from "@/game/round";
@@ -12,7 +13,6 @@ import type { LevelDef, RoundState, ThrowInput, ThrowResult } from "@/game/types
 import { getLocal, loadRoundInputs, recordResult, saveRoundInputs, updateLocal, useLocal } from "@/lib/local";
 import { sfx } from "@/lib/sound";
 import { useIsClient } from "@/lib/useIsClient";
-import { toggleMoveControl, toggleSound } from "@/components/AccountProvider";
 import { useT } from "@/i18n/provider";
 import { errorText, levelHint, levelSubtitle, levelTitle, sideName, tipText } from "@/i18n/game";
 
@@ -169,31 +169,9 @@ function PlayScreenInner(props: PlayScreenProps) {
           <div className="truncate font-display text-[15px] font-bold leading-tight">{levelTitle(level, t)}</div>
           <div className="truncate text-xs text-muted">{levelSubtitle(level, t, { day: dayKey, by: props.challenge?.by })}</div>
         </div>
-        <button
-          className="btn btn-ghost h-10 w-10 !p-0 text-lg"
-          onClick={restart}
-          disabled={round.throwsUsed === 0 && !showResult}
-          aria-label={t("play.restart")}
-          title={t("play.restart")}
-        >
-          ↺
-        </button>
-        <button
-          className="btn btn-ghost h-10 w-10 !p-0 text-[11px] tracking-tighter"
-          onClick={toggleMoveControl}
-          aria-label={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
-          title={moveControl === "slider" ? t("play.moveButtons") : t("play.moveSlider")}
-        >
-          {moveControl === "slider" ? "◀▶" : "━●━"}
-        </button>
-        <button
-          className="btn btn-ghost h-10 w-10 !p-0"
-          onClick={toggleSound}
-          aria-label={local.settings.sound ? t("common.soundOff") : t("common.soundOn")}
-        >
-          {local.settings.sound ? "🔊" : "🔇"}
-        </button>
       </div>
+
+      <GameToolbar onRestart={restart} restartDisabled={round.throwsUsed === 0 && !showResult} />
 
       <div className="grid grid-cols-3 gap-2 pb-2 text-center">
         <Stat label={t("play.score")} value={round.score} accent />
