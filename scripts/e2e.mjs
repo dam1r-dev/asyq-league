@@ -5,6 +5,7 @@ const base = process.env.BASE_URL ?? "http://localhost:3100";
 const SP = process.env.SP ?? ".";
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? undefined });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+await ctx.addCookies([{ name: "lang", value: "ru", url: base }]);
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
