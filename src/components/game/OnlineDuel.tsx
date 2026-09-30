@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
-import { DUEL_LEVEL, DUEL_THROWS_EACH, duelThrow, initDuel, type DuelState } from "@/game/duel";
+import { duelLevel, DUEL_LEVEL, THROWS_BY_MODE, duelThrow, initDuel, type DuelConfig, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { errorText, sideName } from "@/i18n/game";
 import { useT } from "@/i18n/provider";
@@ -19,6 +19,8 @@ interface Srv {
   status: "waiting" | "playing" | "finished";
   hostName: string;
   guestName: string | null;
+  mode: "classic" | "five";
+  field: string | null;
   inputs: ThrowInput[];
   winner: number | null;
   endReason: "played" | "timeout" | "left" | "expired" | null;
@@ -49,8 +51,8 @@ function loadCreds(code: string): Creds | null {
   }
 }
 
-function replay(names: [string, string], inputs: ThrowInput[]): DuelState {
-  return inputs.reduce((d, i) => duelThrow(d, i), initDuel(names));
+function replay(names: [string, string], inputs: ThrowInput[], config: DuelConfig): DuelState {
+  return inputs.reduce((d, i) => duelThrow(d, i), initDuel(names, config));
 }
 
 export default function OnlineDuel({ code }: { code: string }) {
@@ -80,7 +82,9 @@ function Match({ code }: { code: string }) {
 
   const list = useMemo(() => (srv && srv.inputs.length >= mine.length ? srv.inputs : mine), [srv, mine]);
   const names: [string, string] = [srv?.hostName ?? "", srv?.guestName ?? "…"];
-  const duel = useMemo(() => replay(names, list.slice(0, applied)), [list, applied, srv?.hostName, srv?.guestName]); // eslint-disable-line react-hooks/exhaustive-deps
+  const config = useMemo<DuelConfig>(() => ({ mode: srv?.mode ?? "classic", field: srv?.field ?? null }), [srv?.mode, srv?.field]);
+  const level = useMemo(() => duelLevel(config.field) ?? DUEL_LEVEL, [config]);
+  const duel = useMemo(() => replay(names, list.slice(0, applied), config), [list, applied, srv?.hostName, srv?.guestName, config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const latest = useRef({ list, applied, duel });
   useLayoutEffect(() => {
@@ -246,7 +250,11 @@ function Match({ code }: { code: string }) {
       <div className="mx-auto w-full max-w-sm px-4 pt-10 pb-16">
         <div className="text-center text-5xl">⚔️</div>
         <h1 className="mt-3 text-center font-display text-xl font-bold">{t("online.joinTitle", { name: srv.hostName })}</h1>
-        <p className="mt-2 text-center text-sm text-muted">{t("online.joinText", { n: DUEL_THROWS_EACH })}</p>
+        <p className="mt-2 text-center text-sm text-muted">{t("online.joinText", { n: THROWS_BY_MODE[srv.mode] })}</p>
+        <p className="mt-2 text-center text-xs text-muted">
+          {srv.mode === "five" ? t("duel.modeFive") : t("duel.modeClassic")} ·{" "}
+          {srv.field ? t("duel.fieldCustom") : t("duel.fieldStd")}
+        </p>
         <form onSubmit={join} className="card mt-6 grid gap-3 p-5">
           <label className="grid gap-1 text-sm">
             <span className="text-muted">{t("online.yourName")}</span>
@@ -345,7 +353,7 @@ function Match({ code }: { code: string }) {
                   <span className="font-display text-xl font-bold text-gold">{duel.scores[p]}</span>
                 </div>
                 <div className="mt-1 flex gap-1">
-                  {Array.from({ length: DUEL_THROWS_EACH }, (_, i) => (
+                  {Array.from({ length: duel.throwsEach }, (_, i) => (
                     <span key={i} className={`h-1.5 flex-1 rounded-full ${i < duel.throwsLeft[p] ? "bg-gold/80" : "bg-line"}`} />
                   ))}
                 </div>
@@ -381,7 +389,7 @@ function Match({ code }: { code: string }) {
 
       <div className="relative min-h-0 flex-1">
         <GameCanvas
-          level={DUEL_LEVEL}
+          level={level}
           asyks={duel.field.asyks}
           disabled={!myTurn}
           saqaSkin={saqaSkin}

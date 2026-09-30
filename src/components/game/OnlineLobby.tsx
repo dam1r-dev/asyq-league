@@ -3,12 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
+import type { DuelConfig } from "@/game/duel";
 import { errorText } from "@/i18n/game";
 import { useT } from "@/i18n/provider";
 import { saveCreds } from "./OnlineDuel";
 
 /** Создать онлайн-матч или войти по коду. */
-export default function OnlineLobby() {
+export default function OnlineLobby({ opts }: { opts: DuelConfig }) {
   const t = useT();
   const router = useRouter();
   const { me, toast } = useAccount();
@@ -23,7 +24,7 @@ export default function OnlineLobby() {
       const r = await fetch("/api/match", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || me?.displayName || t("duel.p1Default") }),
+        body: JSON.stringify({ name: name.trim() || me?.displayName || t("duel.p1Default"), mode: opts.mode, field: opts.field }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(errorText(d.error, t, t("play.netError")));

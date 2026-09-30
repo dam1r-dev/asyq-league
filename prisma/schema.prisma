@@ -92,6 +92,10 @@ model Match {
   code        String   @unique
   hostName    String
   guestName   String?
+  /// Режим: classic | five.
+  mode        String   @default("classic")
+  /// Своё поле из редактора (код, как в ссылке /c/CODE) или пусто — стандартное.
+  field       String?
   /// Секреты игроков: по ним сервер узнаёт, кто делает ход.
   hostToken   String
   guestToken  String?

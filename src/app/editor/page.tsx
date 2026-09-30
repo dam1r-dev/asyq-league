@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { loadDuelOpts, saveDuelOpts } from "@/components/game/DuelOptions";
 import { useEffect, useRef, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
 import { ASYK_R, DEFAULT_KON, DEFAULT_LINE_Y, WORLD_H, WORLD_W } from "@/game/constants";
@@ -18,6 +20,7 @@ const PRESET: Point[] = Array.from({ length: 7 }, (_, i) => ({ x: 200 - 3 * 24 +
 export default function EditorPage() {
   const { me, fieldSkin } = useAccount();
   const t = useT();
+  const router = useRouter();
   const [asyks, setAsyks] = useState<Point[]>(PRESET);
   const [stones, setStones] = useState<Stone[]>([]);
   const [tool, setTool] = useState<Tool>("asyk");
@@ -103,6 +106,14 @@ export default function EditorPage() {
       by: me?.displayName,
     });
 
+  /** Сохранить расстановку как поле для дуэли и перейти к выбору режима. */
+  const toDuel = () => {
+    if (!asyks.length) return setMessage(t("editor.needAsyk"));
+    const opts = loadDuelOpts();
+    saveDuelOpts({ ...opts, field: code() });
+    router.push("/duel");
+  };
+
   const share = async () => {
     if (!asyks.length) return setMessage(t("editor.needAsyk"));
     const url = `${window.location.origin}/c/${code()}`;
@@ -183,7 +194,10 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <button className="btn btn-ghost mt-4 w-full" onClick={toDuel} disabled={!asyks.length}>
+        {t("editor.toDuel")}
+      </button>
+      <div className="mt-2 grid grid-cols-2 gap-2">
         {asyks.length ? (
           <Link href={`/c/${code()}`} className="btn btn-ghost">
             {t("editor.test")}

@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { DUEL_LEVEL, duelThrow, initDuel, type DuelState } from "@/game/duel";
+import { DUEL_LEVEL, duelLevel, duelThrow, initDuel, type DuelConfig, type DuelMode, type DuelState } from "@/game/duel";
 import { isValidInput } from "@/game/round";
 import type { ThrowInput } from "@/game/types";
 import type { Match } from "@/generated/prisma/client";
@@ -35,9 +35,14 @@ export function parseInputs(m: Pick<Match, "inputs">): ThrowInput[] {
   }
 }
 
+/** Настройки дуэли (режим и поле) из записи матча. */
+export function matchConfig(m: Pick<Match, "mode" | "field">): DuelConfig {
+  return { mode: (m.mode === "five" ? "five" : "classic") as DuelMode, field: m.field };
+}
+
 /** Проигрывает все броски: точно так же это делает и браузер. */
-export function replayDuel(names: [string, string], inputs: ThrowInput[]): DuelState {
-  return inputs.reduce((d, i) => duelThrow(d, i), initDuel(names));
+export function replayDuel(names: [string, string], inputs: ThrowInput[], config: DuelConfig): DuelState {
+  return inputs.reduce((d, i) => duelThrow(d, i), initDuel(names, config));
 }
 
 export function seatOf(m: Match, token: string | undefined | null): 0 | 1 | null {
@@ -54,6 +59,8 @@ export function publicState(m: Match) {
     status: m.status,
     hostName: m.hostName,
     guestName: m.guestName,
+    mode: m.mode,
+    field: m.field,
     inputs: parseInputs(m),
     winner: m.winner,
     endReason: m.endReason,
@@ -71,7 +78,7 @@ export function publicState(m: Match) {
 export async function settleTimeouts(m: Match): Promise<Match> {
   const now = Date.now();
   if (m.status === "playing" && now - m.lastMoveAt.getTime() > (TURN_SECONDS + 3) * 1000) {
-    const duel = replayDuel([m.hostName, m.guestName ?? ""], parseInputs(m));
+    const duel = replayDuel([m.hostName, m.guestName ?? ""], parseInputs(m), matchConfig(m));
     if (duel.status === "playing") {
       const loser = duel.turn;
       const res = await prisma.match.updateMany({
@@ -101,9 +108,9 @@ export async function applyMatchThrow(
   if (m.status !== "playing") return { ok: false, error: "matchNotActive", status: 409 };
   const inputs = parseInputs(m);
   if (inputs.length !== expected) return { ok: false, error: "stale", status: 409 };
-  if (!isValidInput(DUEL_LEVEL, input)) return { ok: false, error: "badThrow", status: 400 };
+  if (!isValidInput(duelLevel(m.field) ?? DUEL_LEVEL, input)) return { ok: false, error: "badThrow", status: 400 };
 
-  const duel = replayDuel([m.hostName, m.guestName ?? ""], inputs);
+  const duel = replayDuel([m.hostName, m.guestName ?? ""], inputs, matchConfig(m));
   if (duel.status !== "playing") return { ok: false, error: "matchNotActive", status: 409 };
   if (duel.turn !== seat) return { ok: false, error: "notYourTurn", status: 403 };
 

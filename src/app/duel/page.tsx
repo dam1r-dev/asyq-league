@@ -9,7 +9,8 @@ import { useAccount } from "@/components/AccountProvider";
 import GameCanvas from "@/components/game/GameCanvas";
 import GameToolbar from "@/components/game/GameToolbar";
 import OnlineLobby from "@/components/game/OnlineLobby";
-import { DUEL_THROWS_EACH, duelThrow, initDuel, type DuelState } from "@/game/duel";
+import DuelOptions, { loadDuelOpts } from "@/components/game/DuelOptions";
+import { DEFAULT_DUEL_CONFIG, duelThrow, initDuel, isValidDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { useLocal } from "@/lib/local";
 import { sfx } from "@/lib/sound";
@@ -19,10 +20,13 @@ const KEY = "asyq:duel";
 interface Saved {
   names: [string, string];
   inputs: ThrowInput[];
+  /** Нет у дуэлей, сохранённых до появления режимов — это классика. */
+  config?: DuelConfig;
 }
 
 function replay(saved: Saved) {
-  return saved.inputs.reduce((d, i) => duelThrow(d, i), initDuel(saved.names));
+  const config = saved.config && isValidDuelConfig(saved.config) ? saved.config : DEFAULT_DUEL_CONFIG;
+  return saved.inputs.reduce((d, i) => duelThrow(d, i), initDuel(saved.names, config));
 }
 
 function restoreDuel(): { duel: DuelState; inputs: ThrowInput[] } | null {
@@ -54,16 +58,17 @@ function Duel() {
   const [inputs, setInputs] = useState<ThrowInput[]>(restored?.inputs ?? []);
   const [runId, setRunId] = useState(0);
   const [mode, setMode] = useState<"local" | "online">("local");
+  const [opts, setOpts] = useState<DuelConfig>(loadDuelOpts);
   const moveControl = local.settings.moveControl ?? "buttons";
 
   /** Начать эту же дуэль заново с теми же игроками. */
   const restartDuel = () => {
     if (!duel) return;
     setRunId((n) => n + 1);
-    setDuel(initDuel(duel.names));
+    setDuel(initDuel(duel.names, duel.config));
     setInputs([]);
     try {
-      localStorage.setItem(KEY, JSON.stringify({ names: duel.names, inputs: [] }));
+      localStorage.setItem(KEY, JSON.stringify({ names: duel.names, inputs: [], config: duel.config }));
     } catch {}
   };
 
@@ -71,10 +76,10 @@ function Duel() {
     e.preventDefault();
     const n: [string, string] = [names[0].trim() || me?.displayName || t("duel.p1Default"), names[1].trim() || t("duel.p2Default")];
     setNames(n);
-    setDuel(initDuel(n));
+    setDuel(initDuel(n, opts));
     setInputs([]);
     try {
-      localStorage.setItem(KEY, JSON.stringify({ names: n, inputs: [] }));
+      localStorage.setItem(KEY, JSON.stringify({ names: n, inputs: [], config: opts }));
     } catch {}
   };
 
@@ -90,7 +95,7 @@ function Duel() {
         if (next.status === "finished") {
           localStorage.removeItem(KEY);
           sfx.win();
-        } else localStorage.setItem(KEY, JSON.stringify({ names: next.names, inputs: nextInputs }));
+        } else localStorage.setItem(KEY, JSON.stringify({ names: next.names, inputs: nextInputs, config: next.config }));
       } catch {}
     },
     [duel, inputs],
@@ -98,10 +103,10 @@ function Duel() {
 
   const rematch = () => {
     const swapped: [string, string] = [duel!.names[1], duel!.names[0]];
-    setDuel(initDuel(swapped));
+    setDuel(initDuel(swapped, duel!.config));
     setInputs([]);
     try {
-      localStorage.setItem(KEY, JSON.stringify({ names: swapped, inputs: [] }));
+      localStorage.setItem(KEY, JSON.stringify({ names: swapped, inputs: [], config: duel!.config }));
     } catch {}
   };
 
@@ -109,9 +114,7 @@ function Duel() {
     return (
       <div className="mx-auto w-full max-w-md px-4 pt-8 pb-16">
         <h1 className="font-display text-2xl font-bold">{t("duel.title")}</h1>
-        <p className="mt-2 text-sm text-muted">
-          {t("duel.lead", { n: DUEL_THROWS_EACH })}
-        </p>
+        <p className="mt-2 text-sm text-muted">{t("duel.leadModes")}</p>
         <div className="mt-5 grid grid-cols-2 gap-1 rounded-2xl border border-line bg-surface p-1" role="tablist">
           {(["local", "online"] as const).map((m) => (
             <button
@@ -125,8 +128,9 @@ function Duel() {
             </button>
           ))}
         </div>
+        <DuelOptions value={opts} onChange={setOpts} />
         {mode === "online" ? (
-          <OnlineLobby />
+          <OnlineLobby opts={opts} />
         ) : (
         <form onSubmit={start} className="card mt-4 grid gap-3 p-5">
           <label className="grid gap-1 text-sm">
@@ -183,7 +187,7 @@ function Duel() {
                 <span className="font-display text-xl font-bold text-gold">{duel.scores[p]}</span>
               </div>
               <div className="mt-1 flex gap-1">
-                {Array.from({ length: DUEL_THROWS_EACH }, (_, i) => (
+                {Array.from({ length: duel.throwsEach }, (_, i) => (
                   <span key={i} className={`h-1.5 flex-1 rounded-full ${i < duel.throwsLeft[p] ? "bg-gold/80" : "bg-line"}`} />
                 ))}
               </div>

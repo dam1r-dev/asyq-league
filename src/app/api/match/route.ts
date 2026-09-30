@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { fail, parseBody, safe } from "@/lib/api";
+import { isValidDuelConfig } from "@/game/duel";
 import { getSessionUserId } from "@/lib/auth";
 import { cleanName, newCode, newToken } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
 import { limitedByIp } from "@/lib/rateLimit";
 
-const schema = z.object({ name: z.string().max(40) });
+const schema = z.object({
+  name: z.string().max(40),
+  mode: z.enum(["classic", "five"]).default("classic"),
+  /** Код своего поля из редактора; сервер сам проверяет расстановку. */
+  field: z.string().max(1500).nullish(),
+});
 
 /** Создать онлайн-дуэль. Возвращает код для ссылки и секрет хозяина. */
 export const POST = safe(async (req: Request) => {
   if (await limitedByIp(req, "match-create", 30, 3600)) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
+
+  const field = body.field || null;
+  if (!isValidDuelConfig({ mode: body.mode, field })) return fail("badField");
 
   // Заодно чистим старые матчи, чтобы таблица не росла.
   await prisma.match.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 24 * 3600 * 1000) } } });
@@ -22,7 +31,14 @@ export const POST = safe(async (req: Request) => {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const m = await prisma.match.create({
-        data: { code: newCode(), hostName: cleanName(body.name, "Player 1"), hostToken: token, hostUserId: userId },
+        data: {
+          code: newCode(),
+          hostName: cleanName(body.name, "Player 1"),
+          mode: body.mode,
+          field,
+          hostToken: token,
+          hostUserId: userId,
+        },
       });
       return NextResponse.json({ code: m.code, token, seat: 0 });
     } catch {
