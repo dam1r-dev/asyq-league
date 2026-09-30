@@ -5,6 +5,7 @@ import { isValidInput } from "@/game/round";
 import type { ThrowInput } from "@/game/types";
 import type { Match } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
+import { safeEqual } from "./safeEqual";
 
 /** Сколько секунд даётся на ход. Потом засчитывается поражение по неявке. */
 export const TURN_SECONDS = 90;
@@ -41,8 +42,8 @@ export function replayDuel(names: [string, string], inputs: ThrowInput[]): DuelS
 
 export function seatOf(m: Match, token: string | undefined | null): 0 | 1 | null {
   if (!token) return null;
-  if (token === m.hostToken) return 0;
-  if (m.guestToken && token === m.guestToken) return 1;
+  if (safeEqual(token, m.hostToken)) return 0;
+  if (safeEqual(token, m.guestToken)) return 1;
   return null;
 }
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { logEvent } from "./log";
 import { prisma } from "./prisma";
 
 /**
@@ -9,13 +10,20 @@ import { prisma } from "./prisma";
  * читается из базы, поэтому устаревший токен не ломает страницы.
  */
 
-const COOKIE = "asyq_session";
+const PROD = process.env.NODE_ENV === "production";
+// Префикс __Host- привязывает cookie к нашему домену (без Domain, только Secure, Path=/).
+const COOKIE = PROD ? "__Host-asyq_session" : "asyq_session";
 const SESSION_VERSION = 1;
-const MAX_AGE = 60 * 60 * 24 * 30;
+const MAX_AGE = 60 * 60 * 24 * 7;
 
+let warnedShort = false;
 function secret() {
   const s = process.env.AUTH_SECRET;
   if (!s) throw new Error("AUTH_SECRET не задан");
+  if (PROD && s.length < 32 && !warnedShort) {
+    warnedShort = true;
+    logEvent("weak_auth_secret", { length: s.length });
+  }
   return new TextEncoder().encode(s);
 }
 
@@ -29,14 +37,15 @@ export async function createSession(userId: string, sessionVersion = 0) {
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: PROD,
     path: "/",
     maxAge: MAX_AGE,
   });
 }
 
 export async function destroySession() {
-  (await cookies()).delete(COOKIE);
+  // Через set с maxAge 0: удаление cookie с префиксом __Host- тоже обязано быть Secure.
+  (await cookies()).set(COOKIE, "", { httpOnly: true, sameSite: "lax", secure: PROD, path: "/", maxAge: 0 });
 }
 
 async function readToken(): Promise<{ id: string; sv: number } | null> {

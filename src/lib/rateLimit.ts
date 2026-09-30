@@ -1,4 +1,5 @@
 import "server-only";
+import { logEvent } from "./log";
 import { prisma } from "./prisma";
 
 /**
@@ -28,7 +29,10 @@ export async function rateLimit(key: string, limit: number, windowSec: number): 
       return true;
     }
     const updated = await prisma.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
-    return updated.count <= limit;
+    const allowed = updated.count <= limit;
+    // Логируем только первое превышение окна, чтобы не засорять журнал при атаке.
+    if (!allowed && updated.count === limit + 1) logEvent("rate_limited", { key: key.replace(/:.*/, ""), limit });
+    return allowed;
   } catch {
     // База недоступна — сам маршрут всё равно вернёт ошибку.
     return true;

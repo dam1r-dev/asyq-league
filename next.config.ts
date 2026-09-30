@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Ответы API зависят от cookie пользователя — CDN и браузер не должны их кэшировать.
+        source: "/api/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
         source: "/:path*",
         headers: [
           { key: "Content-Security-Policy", value: csp },

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, parseBody, safe } from "@/lib/api";
 import { CODE_RE, applyMatchThrow, publicState, seatOf, settleTimeouts } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
+import { limitedByIp } from "@/lib/rateLimit";
 import { inputSchema } from "@/lib/verify";
 
 const schema = z.object({
@@ -16,6 +17,7 @@ const schema = z.object({
 export const POST = safe(async (req: Request, ctx: RouteContext<"/api/match/[code]/throw">) => {
   const { code } = await ctx.params;
   if (!CODE_RE.test(code)) return fail("matchNotFound", 404);
+  if (await limitedByIp(req, "match-throw", 120, 60)) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
   const found = await prisma.match.findUnique({ where: { code } });

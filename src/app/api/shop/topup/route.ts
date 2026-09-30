@@ -19,6 +19,9 @@ export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("needLogin", 401);
   if (!(await rateLimit(`topup:${user.id}`, 20, 3600))) return fail("tooMany", 429);
+  // Тестовая карта публична, поэтому пакеты тиынов ограничены суточным лимитом:
+  // дорогие костюмы нельзя «накликать» пополнением.
+  if (!(await rateLimit(`topup-day:${user.id}`, 3, 86400))) return fail("topupLimit", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
   const item = getItem(body.itemId);

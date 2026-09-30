@@ -3,12 +3,15 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { ownedItems } from "@/lib/me";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 import { attemptSchema, verifyAttempt } from "@/lib/verify";
 import { award, balance, REWARDS } from "@/lib/coins";
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("needLogin", 401);
+  // Каждая попытка перепроигрывается на сервере — защищаем процессор от заваливания.
+  if (!(await rateLimit(`attempts:${user.id}`, 60, 60))) return fail("tooMany", 429);
   const body = await parseBody(req, attemptSchema);
   if (!body) return fail("badData");
 

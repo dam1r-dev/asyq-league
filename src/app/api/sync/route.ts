@@ -4,6 +4,7 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { ownedItems } from "@/lib/me";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 import { inputSchema, verifyAttempt } from "@/lib/verify";
 
 /**
@@ -17,6 +18,8 @@ const schema = z.object({
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
   if (!user) return fail("needLogin", 401);
+  // До 40 уровней за запрос, каждый перепроигрывается — лимит строже, чем у обычных попыток.
+  if (!(await rateLimit(`sync:${user.id}`, 10, 60))) return fail("tooMany", 429);
   const body = await parseBody(req, schema);
   if (!body) return fail("badData");
   const entries = Object.entries(body.levels).slice(0, 40);

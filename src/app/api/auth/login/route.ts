@@ -5,7 +5,8 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { createSession } from "@/lib/auth";
 import { award, balance } from "@/lib/coins";
 import { prisma } from "@/lib/prisma";
-import { limitedByIp, rateLimit } from "@/lib/rateLimit";
+import { logEvent } from "@/lib/log";
+import { clientIp, limitedByIp, rateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({ username: z.string().trim().toLowerCase().max(40), password: z.string().max(100) });
 
@@ -21,12 +22,17 @@ export const POST = safe(async (req: Request) => {
 
   const user = await prisma.user.findUnique({ where: { username: body.username } });
   const ok = await bcrypt.compare(body.password, user?.passwordHash ?? DUMMY_HASH);
-  if (!user || !ok) return fail("badCredentials", 401);
+  if (!user || !ok) {
+    logEvent("auth_fail", { ip: clientIp(req), username: body.username.slice(0, 20) });
+    return fail("badCredentials", 401);
+  }
 
   if (user.username === "demo") {
     // Общий тестовый аккаунт: каждый вход пополняет баланс до 1000 🪙.
+    // Ключ зависит от баланса и минуты: параллельные входы не начислят дважды.
     const have = await balance(user.id);
-    if (have < 1000) await award(user.id, 1000 - have, "topup", `demo-refill:${user.id}:${Date.now()}`);
+    if (have < 1000)
+      await award(user.id, 1000 - have, "topup", `demo-refill:${user.id}:${have}:${Math.floor(Date.now() / 60000)}`);
   }
   await createSession(user.id, user.sessionVersion);
   return NextResponse.json({ ok: true });

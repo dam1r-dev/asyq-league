@@ -652,6 +652,8 @@ const en: Dict = {
     badUsername: "Username: 3–20 characters, latin letters, digits and _",
     shortPassword: "Password must be at least 8 characters and not a common one",
     tooMany: "Too many requests. Please wait a moment and try again.",
+    topupLimit: "Test coin packs: 3 per day at most. Earn coins by playing!",
+    serverError: "Something went wrong on the server. Please try again.",
     shortName: "Name must be at least 2 characters",
     checkFields: "Please check the fields",
     unknownItem: "Unknown item",
