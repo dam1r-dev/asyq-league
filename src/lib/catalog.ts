@@ -132,6 +132,8 @@ export const CATALOG: ShopItem[] = [
   { id: "hat-tymaq", kind: "hat", name: "Тымақ", description: "", price: 180 },
   { id: "hat-saukele", kind: "hat", name: "Сәукеле", description: "", price: 300 },
   { id: "hat-dulygha", kind: "hat", name: "Дулыға", description: "", price: 350 },
+  { id: "hat-kimeshek", kind: "hat", name: "Кимешек", description: "", price: 120 },
+  { id: "hat-kimeshek-zhaulyk", kind: "hat", name: "Кимешек, жаулық", description: "", price: 260 },
   // ——— Цвета одежды
   ...(Object.keys(COLOR_HEX) as (keyof typeof COLOR_HEX)[]).map((id) => ({
     id,

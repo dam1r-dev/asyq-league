@@ -10,7 +10,10 @@ import {
   EYE_COLORS,
   HAIR_COLORS,
   GENDERS,
+  BEARDS,
+  MUSTACHES,
   genderPreset,
+  mustacheOf,
   HAIR_STYLES,
   HATS,
   OUTFITS,
@@ -123,19 +126,42 @@ export default function AvatarPage() {
               <Swatches colors={HAIR_COLORS} value={a.hairColor} onChange={(hairColor) => set({ hairColor })} />
             </div>
           </Section>
-          <Section title={t("avatar.mustache")}>
-            <div className="grid w-40 grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
-              {[false, true].map((v) => (
-                <button
-                  key={String(v)}
-                  onClick={() => set({ mustache: v })}
-                  className={`rounded-lg py-1.5 text-sm font-semibold ${a.mustache === v ? "bg-surface-2 text-text" : "text-muted"}`}
-                >
-                  {v ? t("avatar.on") : t("avatar.off")}
-                </button>
-              ))}
-            </div>
-          </Section>
+          {a.gender === "m" ? (
+            <>
+              <Section title={t("avatar.mustache")}>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {MUSTACHES.map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => set({ mustacheStyle: m, mustache: m !== "none" })}
+                      aria-pressed={mustacheOf(a) === m}
+                      className={`rounded-xl border p-1 text-xs font-semibold ${mustacheOf(a) === m ? "border-gold bg-surface-2" : "border-line"}`}
+                    >
+                      <Avatar config={{ ...a, mustacheStyle: m, mustache: m !== "none", beard: "none", hat: "hat-none" }} variant="head" className="mx-auto h-14 w-14" />
+                      {t(`avatar.mustaches.${m}`)}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+              <Section title={t("avatar.beard")}>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {BEARDS.map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => set({ beard: b })}
+                      aria-pressed={a.beard === b}
+                      className={`rounded-xl border p-1 text-xs font-semibold ${a.beard === b ? "border-gold bg-surface-2" : "border-line"}`}
+                    >
+                      <Avatar config={{ ...a, beard: b, hat: "hat-none" }} variant="head" className="mx-auto h-14 w-14" />
+                      {t(`avatar.beards.${b}`)}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            </>
+          ) : (
+            <p className="text-xs text-muted">{t("avatar.facialNote")}</p>
+          )}
 
           <Section title={t("avatar.outfit")}>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">

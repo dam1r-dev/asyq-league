@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { COLOR_HEX, EYE_COLORS, HAIR_COLORS, SKIN_TONES, type AvatarConfig } from "./config";
+import { COLOR_HEX, EYE_COLORS, HAIR_COLORS, SKIN_TONES, mustacheOf, type AvatarConfig } from "./config";
 
 /**
  * Плоский персонаж в духе детской иллюстрации: большая голова, простые формы.
@@ -90,10 +90,16 @@ export default function Avatar({
           <ellipse cx={124} cy={101} rx={6} ry={3.5} fill="#e98a7a" opacity={0.45} />
         </g>
       )}
-      {config.mustache && (
-        <path d="M88 103 Q94 99 100 102 Q106 99 112 103 Q106 107 100 104 Q94 107 88 103 Z" fill={hair} />
-      )}
-      <path d="M87 108 Q100 118 113 108" fill="none" stroke="#6b3f22" strokeWidth={3} strokeLinecap="round" />
+      {config.gender === "m" && <Beard style={config.beard} fill={hair} />}
+      {config.gender === "m" && <Mustache style={mustacheOf(config)} fill={hair} />}
+      {/* Под густой бородой рот рисуем светлее, чтобы он не терялся */}
+      <path
+        d="M87 108 Q100 118 113 108"
+        fill="none"
+        stroke={config.gender === "m" && (config.beard === "full" || config.beard === "long") ? "#c9776a" : "#6b3f22"}
+        strokeWidth={3}
+        strokeLinecap="round"
+      />
 
       {/* Волосы спереди */}
       {!altyn && config.hair !== "bald" && (
@@ -107,6 +113,52 @@ export default function Avatar({
       {altyn ? <AltynAdamHat uid={uid} /> : <Hat hat={config.hat} c={c} cDark={cDark} />}
     </svg>
   );
+}
+
+/** Борода: рисуется поверх лица, цвета волос. */
+function Beard({ style, fill }: { style: AvatarConfig["beard"]; fill: string }) {
+  switch (style) {
+    case "stubble":
+      return <path d="M62 98 Q66 130 100 131 Q134 130 138 98 Q128 112 100 114 Q72 112 62 98 Z" fill={fill} opacity={0.3} />;
+    case "goatee":
+      return <path d="M91 114 Q100 110 109 114 Q110 128 100 135 Q90 128 91 114 Z" fill={fill} />;
+    case "short":
+      return <path d="M61 92 Q62 130 100 136 Q138 130 139 92 Q134 112 120 116 Q100 122 80 116 Q66 112 61 92 Z" fill={fill} />;
+    case "full":
+      return <path d="M60 90 Q60 138 100 144 Q140 138 140 90 Q134 106 124 109 Q100 104 76 109 Q66 106 60 90 Z" fill={fill} />;
+    case "long":
+      return (
+        <g fill={fill}>
+          <path d="M60 90 Q56 140 100 176 Q144 140 140 90 Q134 106 124 109 Q100 104 76 109 Q66 106 60 90 Z" />
+          <path d="M84 140 Q100 150 116 140" fill="none" stroke="#000" strokeWidth={1.2} opacity={0.18} />
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+/** Усы: пять форм. */
+function Mustache({ style, fill }: { style: AvatarConfig["mustacheStyle"]; fill: string }) {
+  switch (style) {
+    case "classic":
+      return <path d="M88 103 Q94 99 100 102 Q106 99 112 103 Q106 107 100 104 Q94 107 88 103 Z" fill={fill} />;
+    case "thick":
+      return <path d="M82 105 Q91 95 100 100 Q109 95 118 105 Q109 112 100 106 Q91 112 82 105 Z" fill={fill} />;
+    case "thin":
+      return <path d="M87 103 Q100 97 113 103" fill="none" stroke={fill} strokeWidth={2.6} strokeLinecap="round" />;
+    case "handlebar":
+      return (
+        <g fill="none" stroke={fill} strokeLinecap="round">
+          <path d="M100 102 Q91 97 83 103 Q79 107 79 100" strokeWidth={4} />
+          <path d="M100 102 Q109 97 117 103 Q121 107 121 100" strokeWidth={4} />
+        </g>
+      );
+    case "chevron":
+      return <path d="M82 99 Q100 96 118 99 Q116 105 113 113 Q108 105 100 105 Q92 105 87 113 Q84 105 82 99 Z" fill={fill} />;
+    default:
+      return null;
+  }
 }
 
 function Body({
@@ -415,6 +467,36 @@ function Hat({ hat, c, cDark }: { hat: AvatarConfig["hat"]; c: string; cDark: st
           <path d="M72 46 Q100 30 128 46" fill="none" stroke="#c7ccd2" strokeWidth={3} />
         </g>
       );
+    case "hat-kimeshek":
+    case "hat-kimeshek-zhaulyk": {
+      // Кимешек: белое покрывало, закрывающее волосы, шею и плечи; лицо остаётся открытым.
+      const ornate = hat === "hat-kimeshek-zhaulyk";
+      const cloth = "#f6f1e7";
+      const fold = "#d9d1c0";
+      return (
+        <g>
+          <path
+            fillRule="evenodd"
+            fill={cloth}
+            stroke={fold}
+            strokeWidth={1.2}
+            d="M50 92 Q46 28 100 22 Q154 28 150 92 L160 168 Q100 184 40 168 Z M100 48 C78 48 63 66 63 90 C63 114 78 133 100 133 C122 133 137 114 137 90 C137 66 122 48 100 48 Z"
+          />
+          <path d="M70 150 Q100 160 130 150 M62 130 Q58 150 56 166 M138 130 Q142 150 144 166" fill="none" stroke={fold} strokeWidth={1.4} />
+          {ornate && (
+            <g>
+              <path d="M44 166 Q100 182 156 166" fill="none" stroke={c} strokeWidth={6} strokeLinecap="round" />
+              <path d="M44 166 Q100 182 156 166" fill="none" stroke={GOLD} strokeWidth={1.4} strokeDasharray="3 4" />
+              <path d="M62 62 Q100 40 138 62" fill="none" stroke={c} strokeWidth={5} strokeLinecap="round" />
+              <path d="M66 58 Q100 37 134 58" fill="none" stroke={GOLD} strokeWidth={1.2} strokeDasharray="2 4" />
+              {[78, 100, 122].map((x) => (
+                <circle key={x} cx={x} cy={x === 100 ? 41 : 46} r={2.6} fill={GOLD} />
+              ))}
+            </g>
+          )}
+        </g>
+      );
+    }
     default:
       return null;
   }

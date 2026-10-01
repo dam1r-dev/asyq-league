@@ -55,6 +55,8 @@ const LATIN: Record<string, string> = {
   "hat-tymaq": "Tymaq",
   "hat-saukele": "Säukele",
   "hat-dulygha": "Dulygha (helmet)",
+  "hat-kimeshek": "Kimeshek",
+  "hat-kimeshek-zhaulyk": "Kimeshek with zhaulyk",
   алшы: "alshy",
   тәйкі: "täiki",
   бүк: "bük",

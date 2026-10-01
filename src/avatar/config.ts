@@ -12,8 +12,14 @@ export const HAIR_COLORS = ["#1c1613", "#3a2416", "#6f4323", "#9c5a2c", "#bdb6ad
 export const HAIR_STYLES = ["short", "long", "braids", "bald"] as const;
 export type HairStyle = (typeof HAIR_STYLES)[number];
 
+/** Усы и борода — для персонажа-мужчины, всегда бесплатно. */
+export const MUSTACHES = ["none", "classic", "thick", "thin", "handlebar", "chevron"] as const;
+export type MustacheStyle = (typeof MUSTACHES)[number];
+export const BEARDS = ["none", "stubble", "goatee", "short", "full", "long"] as const;
+export type BeardStyle = (typeof BEARDS)[number];
+
 export const OUTFITS = ["outfit-simple", "outfit-kamzol", "outfit-shapan", "outfit-koilek", "outfit-ton", "outfit-sauyt", "outfit-altyn-adam"] as const;
-export const HATS = ["hat-none", "hat-taqiya", "hat-taqiya-kiiz", "hat-taqiya-zer", "hat-borik", "hat-tymaq", "hat-saukele", "hat-dulygha"] as const;
+export const HATS = ["hat-none", "hat-taqiya", "hat-taqiya-kiiz", "hat-taqiya-zer", "hat-borik", "hat-tymaq", "hat-saukele", "hat-dulygha", "hat-kimeshek", "hat-kimeshek-zhaulyk"] as const;
 export const COLORS = [
   "color-green",
   "color-blue",
@@ -50,7 +56,10 @@ export const avatarSchema = z.object({
   eyes: z.number().int().min(0).max(EYE_COLORS.length - 1),
   hair: z.enum(HAIR_STYLES),
   hairColor: z.number().int().min(0).max(HAIR_COLORS.length - 1),
+  /** Устарело: старые сохранения хранят только «есть усы / нет». См. mustacheOf(). */
   mustache: z.boolean(),
+  mustacheStyle: z.enum(MUSTACHES).default("none"),
+  beard: z.enum(BEARDS).default("none"),
   outfit: z.enum(OUTFITS),
   hat: z.enum(HATS),
   color: z.enum(COLORS),
@@ -65,6 +74,8 @@ export const DEFAULT_AVATAR: AvatarConfig = {
   hair: "short",
   hairColor: 2,
   mustache: false,
+  mustacheStyle: "none",
+  beard: "none",
   outfit: "outfit-simple",
   hat: "hat-none",
   color: "color-green",
@@ -94,5 +105,10 @@ export function paidParts(a: AvatarConfig) {
 
 /** При выборе пола сразу подставляем типичную внешность — дальше её можно менять. */
 export function genderPreset(g: Gender): Partial<AvatarConfig> {
-  return g === "f" ? { gender: "f", hair: "braids", mustache: false } : { gender: "m", hair: "short" };
+  return g === "f" ? { gender: "f", hair: "braids", mustache: false, mustacheStyle: "none", beard: "none" } : { gender: "m", hair: "short" };
+}
+
+/** Стиль усов с учётом старых сохранений (там было только true/false). */
+export function mustacheOf(a: AvatarConfig): MustacheStyle {
+  return a.mustacheStyle !== "none" ? a.mustacheStyle : a.mustache ? "classic" : "none";
 }
