@@ -24,7 +24,7 @@ export default function OnlineLobby({ opts }: { opts: DuelConfig }) {
       const r = await fetch("/api/match", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || me?.displayName || t("duel.p1Default"), mode: opts.mode, field: opts.field }),
+        body: JSON.stringify({ name: name.trim() || me?.displayName || t("duel.p1Default"), mode: opts.mode, perTurn: opts.perTurn, rounds: opts.rounds }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(errorText(d.error, t, t("play.netError")));

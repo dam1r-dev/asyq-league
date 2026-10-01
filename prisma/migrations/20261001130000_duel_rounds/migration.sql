@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Match" ADD COLUMN "perTurn" INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE "Match" ADD COLUMN "rounds" TEXT;

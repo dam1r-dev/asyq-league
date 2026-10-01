@@ -10,7 +10,7 @@ const schema = z.object({
   token: z.string().max(60),
   input: inputSchema,
   /** Сколько бросков клиент считает уже сыгранными: защита от гонок. */
-  expected: z.number().int().min(0).max(60),
+  expected: z.number().int().min(0).max(100),
 });
 
 /** Сделать бросок. Сервер сам проверяет очередь и честность броска. */

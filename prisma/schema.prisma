@@ -94,8 +94,12 @@ model Match {
   guestName   String?
   /// Режим: classic | five.
   mode        String   @default("classic")
-  /// Своё поле из редактора (код, как в ссылке /c/CODE) или пусто — стандартное.
+  /// Устарело: одно своё поле (заменено на rounds). Читается для старых матчей.
   field       String?
+  /// Бросков подряд за один ход (1–5).
+  perTurn     Int      @default(1)
+  /// Раунды матча: JSON-массив кодов полей из редактора (null — стандартное поле).
+  rounds      String?
   /// Секреты игроков: по ним сервер узнаёт, кто делает ход.
   hostToken   String
   guestToken  String?

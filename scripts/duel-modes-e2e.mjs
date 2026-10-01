@@ -22,9 +22,10 @@ const box0 = await host.locator("canvas").boundingBox();
 await host.mouse.click(box0.x + box0.width * 0.5, box0.y + box0.height * 0.2); // лишний асык (может не встать — ок)
 await host.getByRole("button", { name: /В дуэль/ }).click();
 await host.waitForURL("**/duel");
-await host.getByText(/асыков: \d+, камней: \d+/).waitFor();
-console.log("custom field chosen:", await host.getByText(/асыков: \d+, камней: \d+/).innerText());
-
+await host.getByText(/Своё поле · асыков: \d+/).waitFor();
+console.log("round 1 custom:", await host.getByText(/Своё поле · асыков: \d+/).innerText());
+await host.getByRole("button", { name: /Стандартный раунд/ }).click();
+await host.getByRole("radio", { name: "2", exact: true }).click(); // 2 броска за ход
 await host.getByRole("radio", { name: /Пятёрки/ }).click();
 await host.getByRole("tab", { name: /Онлайн/ }).click();
 await host.getByPlaceholder("Игрок 1").fill("Аян");
@@ -39,23 +40,26 @@ await guest.getByRole("button", { name: "Войти" }).click();
 await host.getByText("Твой ход").waitFor({ timeout: 15000 });
 
 const myTurn = async (p) => (await p.getByText("Твой ход").count()) > 0;
-let last = null;
-for (let i = 0; i < 4; i++) {
-  const p = (await myTurn(host)) ? host : (await myTurn(guest)) ? guest : null;
-  if (!p) { await host.waitForTimeout(1500); i--; continue; }
-  const who = p === host ? "host" : "guest";
-  // Бросок точно в кон, чтобы он что-то выбил: в «Пятёрках» ход всё равно переходит.
+const seq = [];
+for (let i = 0; i < 12; i++) {
+  let p = null;
+  for (let k = 0; k < 20 && !p; k++) {
+    p = (await myTurn(host)) ? host : (await myTurn(guest)) ? guest : null;
+    if (!p) await host.waitForTimeout(500);
+  }
+  if (!p) { console.log("NO TURN at throw", i + 1); break; }
+  seq.push(p === host ? "H" : "G");
   const box = await p.locator("canvas").boundingBox();
   const sx = box.x + box.width * 0.5;
   const sy = box.y + box.height * 0.62;
   await p.mouse.move(sx, sy); await p.mouse.down();
   await p.mouse.move(sx, sy + 135, { steps: 6 }); await p.mouse.up();
-  await host.waitForTimeout(7500);
-  const nowHost = await myTurn(host), nowGuest = await myTurn(guest);
-  console.log(`throw ${i + 1} by ${who}: next turn -> host=${nowHost} guest=${nowGuest}`, who !== last ? "ALTERNATES" : "REPEAT?");
-  last = who;
-  if ((who === "host" && !nowGuest) || (who === "guest" && !nowHost)) console.log("STRICT TURN VIOLATION");
+  await host.waitForTimeout(5500);
 }
+console.log("turn order:", seq.join(" "));
+const expected = "H H G G H H G G H G G G".split(" ").join(" ");
+console.log(seq.join(" ") === expected ? "ORDER OK (2 per turn, round 2 starts with guest)" : "ORDER DIFFERS, expected " + expected);
+console.log("banner:", await host.getByText(/Раунд \d из 2/).first().innerText().catch(() => "none"));
 await host.screenshot({ path: `${SP}/duel-five-host.png` });
 await host.getByRole("button", { name: /Сдаться/ }).click();
 await guest.getByText("Ты победил!").waitFor({ timeout: 10000 });

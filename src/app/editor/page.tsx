@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadDuelOpts, saveDuelOpts } from "@/components/game/DuelOptions";
+import { addRoundFromEditor } from "@/components/game/DuelOptions";
 import { useEffect, useRef, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
 import { ASYK_R, DEFAULT_KON, DEFAULT_LINE_Y, WORLD_H, WORLD_W } from "@/game/constants";
@@ -109,8 +109,7 @@ export default function EditorPage() {
   /** Сохранить расстановку как поле для дуэли и перейти к выбору режима. */
   const toDuel = () => {
     if (!asyks.length) return setMessage(t("editor.needAsyk"));
-    const opts = loadDuelOpts();
-    saveDuelOpts({ ...opts, field: code() });
+    addRoundFromEditor(code());
     router.push("/duel");
   };
 

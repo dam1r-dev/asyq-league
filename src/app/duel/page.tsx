@@ -10,7 +10,7 @@ import GameCanvas from "@/components/game/GameCanvas";
 import GameToolbar from "@/components/game/GameToolbar";
 import OnlineLobby from "@/components/game/OnlineLobby";
 import DuelOptions, { loadDuelOpts } from "@/components/game/DuelOptions";
-import { DEFAULT_DUEL_CONFIG, duelThrow, initDuel, isValidDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
+import { duelThrow, initDuel, normalizeDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { useLocal } from "@/lib/local";
 import { sfx } from "@/lib/sound";
@@ -25,7 +25,8 @@ interface Saved {
 }
 
 function replay(saved: Saved) {
-  const config = saved.config && isValidDuelConfig(saved.config) ? saved.config : DEFAULT_DUEL_CONFIG;
+  // normalizeDuelConfig понимает и старый формат сохранения (одно поле, без раундов).
+  const config = normalizeDuelConfig(saved.config);
   return saved.inputs.reduce((d, i) => duelThrow(d, i), initDuel(saved.names, config));
 }
 
@@ -198,7 +199,7 @@ function Duel() {
 
       <div className="relative min-h-0 flex-1">
         <GameCanvas
-          key={runId}
+          key={`${runId}-${duel.round}`}
           moveControl={moveControl}
           level={duel.field.level}
           asyks={duel.field.asyks}
@@ -210,6 +211,12 @@ function Duel() {
             duel.status === "playing" && (
               <div className="pointer-events-none absolute inset-x-3 top-3">
                 <div key={inputs.length} className="pop-in card px-3 py-2 text-center text-sm">
+                  {duel.roundsTotal > 1 && (
+                    <div className="text-xs font-semibold text-gold">
+                      {t("duel.roundOf", { n: duel.round + 1, total: duel.roundsTotal })}
+                      {last?.roundOver ? ` · ${t("duel.newRound")}` : ""}
+                    </div>
+                  )}
                   {last && (
                     <div className="text-xs text-muted">
                       {duel.names[last.player]}:{" "}
@@ -221,6 +228,7 @@ function Duel() {
                   )}
                   <span className="font-bold text-gold">{turnName}</span>
                   {last?.extraTurn ? t("duel.again") : t("duel.yourTurn")}
+                  {duel.config.perTurn > 1 && <span className="text-muted"> · {t("duel.turnLeft", { n: duel.turnLeft })}</span>}
                 </div>
               </div>
             )

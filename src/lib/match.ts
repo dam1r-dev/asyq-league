@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { DUEL_LEVEL, duelLevel, duelThrow, initDuel, type DuelConfig, type DuelMode, type DuelState } from "@/game/duel";
+import { duelThrow, initDuel, normalizeDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
 import { isValidInput } from "@/game/round";
 import type { ThrowInput } from "@/game/types";
 import type { Match } from "@/generated/prisma/client";
@@ -35,9 +35,13 @@ export function parseInputs(m: Pick<Match, "inputs">): ThrowInput[] {
   }
 }
 
-/** Настройки дуэли (режим и поле) из записи матча. */
-export function matchConfig(m: Pick<Match, "mode" | "field">): DuelConfig {
-  return { mode: (m.mode === "five" ? "five" : "classic") as DuelMode, field: m.field };
+/** Настройки дуэли (режим, броски за ход, раунды) из записи матча. */
+export function matchConfig(m: Pick<Match, "mode" | "field" | "perTurn" | "rounds">): DuelConfig {
+  let rounds: unknown = undefined;
+  try {
+    rounds = m.rounds ? JSON.parse(m.rounds) : undefined;
+  } catch {}
+  return normalizeDuelConfig({ mode: m.mode, perTurn: m.perTurn, rounds, field: m.field });
 }
 
 /** Проигрывает все броски: точно так же это делает и браузер. */
@@ -59,8 +63,10 @@ export function publicState(m: Match) {
     status: m.status,
     hostName: m.hostName,
     guestName: m.guestName,
-    mode: m.mode,
-    field: m.field,
+    ...(() => {
+      const c = matchConfig(m);
+      return { mode: c.mode, perTurn: c.perTurn, rounds: c.rounds };
+    })(),
     inputs: parseInputs(m),
     winner: m.winner,
     endReason: m.endReason,
@@ -108,10 +114,10 @@ export async function applyMatchThrow(
   if (m.status !== "playing") return { ok: false, error: "matchNotActive", status: 409 };
   const inputs = parseInputs(m);
   if (inputs.length !== expected) return { ok: false, error: "stale", status: 409 };
-  if (!isValidInput(duelLevel(m.field) ?? DUEL_LEVEL, input)) return { ok: false, error: "badThrow", status: 400 };
-
   const duel = replayDuel([m.hostName, m.guestName ?? ""], inputs, matchConfig(m));
   if (duel.status !== "playing") return { ok: false, error: "matchNotActive", status: 409 };
+  // Бросок проверяется по полю текущего раунда (у каждого раунда своя расстановка).
+  if (!isValidInput(duel.field.level, input)) return { ok: false, error: "badThrow", status: 400 };
   if (duel.turn !== seat) return { ok: false, error: "notYourTurn", status: 403 };
 
   const next = duelThrow(duel, input);

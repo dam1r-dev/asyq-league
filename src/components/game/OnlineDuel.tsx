@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
-import { duelLevel, DUEL_LEVEL, THROWS_BY_MODE, duelThrow, initDuel, type DuelConfig, type DuelState } from "@/game/duel";
+import { THROWS_BY_MODE, duelThrow, initDuel, type DuelConfig, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { errorText, sideName } from "@/i18n/game";
 import { useT } from "@/i18n/provider";
@@ -20,7 +20,8 @@ interface Srv {
   hostName: string;
   guestName: string | null;
   mode: "classic" | "five";
-  field: string | null;
+  perTurn: number;
+  rounds: (string | null)[];
   inputs: ThrowInput[];
   winner: number | null;
   endReason: "played" | "timeout" | "left" | "expired" | null;
@@ -82,8 +83,11 @@ function Match({ code }: { code: string }) {
 
   const list = useMemo(() => (srv && srv.inputs.length >= mine.length ? srv.inputs : mine), [srv, mine]);
   const names: [string, string] = [srv?.hostName ?? "", srv?.guestName ?? "…"];
-  const config = useMemo<DuelConfig>(() => ({ mode: srv?.mode ?? "classic", field: srv?.field ?? null }), [srv?.mode, srv?.field]);
-  const level = useMemo(() => duelLevel(config.field) ?? DUEL_LEVEL, [config]);
+  const roundsKey = JSON.stringify(srv?.rounds ?? [null]);
+  const config = useMemo<DuelConfig>(
+    () => ({ mode: srv?.mode ?? "classic", perTurn: srv?.perTurn ?? 1, rounds: JSON.parse(roundsKey) as (string | null)[] }),
+    [srv?.mode, srv?.perTurn, roundsKey],
+  );
   const duel = useMemo(() => replay(names, list.slice(0, applied), config), [list, applied, srv?.hostName, srv?.guestName, config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const latest = useRef({ list, applied, duel });
@@ -253,7 +257,7 @@ function Match({ code }: { code: string }) {
         <p className="mt-2 text-center text-sm text-muted">{t("online.joinText", { n: THROWS_BY_MODE[srv.mode] })}</p>
         <p className="mt-2 text-center text-xs text-muted">
           {srv.mode === "five" ? t("duel.modeFive") : t("duel.modeClassic")} ·{" "}
-          {srv.field ? t("duel.fieldCustom") : t("duel.fieldStd")}
+          {t("duel.perTurnShort", { n: srv.perTurn })} · {t("duel.roundsShort", { n: srv.rounds.length })}
         </p>
         <form onSubmit={join} className="card mt-6 grid gap-3 p-5">
           <label className="grid gap-1 text-sm">
@@ -380,7 +384,14 @@ function Match({ code }: { code: string }) {
                   {duel.last.result.penalty ? t("duel.penalty") : ""}
                 </div>
               )}
+              {duel.roundsTotal > 1 && (
+                <div className="text-xs font-semibold text-gold">
+                  {t("duel.roundOf", { n: duel.round + 1, total: duel.roundsTotal })}
+                  {duel.last?.roundOver ? ` · ${t("duel.newRound")}` : ""}
+                </div>
+              )}
               <span className="font-bold text-gold">{myTurn ? t("online.yourTurn") : t("online.oppTurn", { name: turnName })}</span>
+              {duel.config.perTurn > 1 && <span className="text-muted"> · {t("duel.turnLeft", { n: duel.turnLeft })}</span>}
               {caughtUp && <span className="text-muted"> · {t("online.timeLeft", { n: secondsLeft })}</span>}
             </div>
           )}
@@ -389,7 +400,8 @@ function Match({ code }: { code: string }) {
 
       <div className="relative min-h-0 flex-1">
         <GameCanvas
-          level={level}
+          key={duel.round}
+          level={duel.field.level}
           asyks={duel.field.asyks}
           disabled={!myTurn}
           saqaSkin={saqaSkin}
