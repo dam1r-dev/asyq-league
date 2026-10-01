@@ -50,20 +50,7 @@ export default function Avatar({
     <svg viewBox={viewBox} className={className} role="img" aria-label={title ?? "avatar"}>
       {altyn && <AltynAdamBack uid={uid} full={variant === "full"} />}
       {/* Волосы сзади */}
-      {!altyn && config.hair === "long" && (
-        <path d="M58 82 Q56 38 100 36 Q144 38 142 82 L146 150 Q100 160 54 150 Z" fill={hair} />
-      )}
-      {!altyn && config.hair === "braids" && (
-        <g fill={hair}>
-          <path d="M58 84 Q56 38 100 36 Q144 38 142 84 L140 120 L60 120 Z" />
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <g key={i}>
-              <ellipse cx={58} cy={128 + i * 15} rx={8} ry={9} />
-              <ellipse cx={142} cy={128 + i * 15} rx={8} ry={9} />
-            </g>
-          ))}
-        </g>
-      )}
+      {!altyn && <BackHair style={config.hair} fill={hair} />}
 
       {variant === "full" &&
         (altyn ? (
@@ -102,17 +89,92 @@ export default function Avatar({
       />
 
       {/* Волосы спереди */}
-      {!altyn && config.hair !== "bald" && (
-        <path
-          d="M60 86 Q56 42 100 40 Q144 42 140 86 Q136 70 128 60 Q108 66 84 60 Q70 64 60 86 Z"
-          fill={hair}
-        />
-      )}
-      {!altyn && config.hair === "bald" && <path d="M92 47 Q100 40 108 47 Q100 45 92 47 Z" fill={hair} />}
+      {!altyn && <FrontHair style={config.hair} fill={hair} />}
 
       {altyn ? <AltynAdamHat uid={uid} /> : <Hat hat={config.hat} c={c} cDark={cDark} />}
     </svg>
   );
+}
+
+/** Задняя часть причёски: то, что видно позади головы и плеч. */
+function BackHair({ style, fill }: { style: AvatarConfig["hair"]; fill: string }) {
+  switch (style) {
+    case "long":
+      return <path d="M58 82 Q56 38 100 36 Q144 38 142 82 L146 150 Q100 160 54 150 Z" fill={fill} />;
+    case "bob":
+      return <path d="M54 90 Q50 36 100 34 Q150 36 146 90 L149 124 Q100 136 51 124 Z" fill={fill} />;
+    case "ponytail":
+      return (
+        <g fill={fill}>
+          <path d="M124 58 Q170 56 166 106 Q164 140 148 156 Q154 120 144 100 Q136 80 124 58 Z" />
+          <circle cx={134} cy={64} r={5} fill="#c8322b" />
+        </g>
+      );
+    case "braids":
+      return (
+        <g fill={fill}>
+          <path d="M58 84 Q56 38 100 36 Q144 38 142 84 L140 120 L60 120 Z" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <g key={i}>
+              <ellipse cx={58} cy={128 + i * 15} rx={8} ry={9} />
+              <ellipse cx={142} cy={128 + i * 15} rx={8} ry={9} />
+            </g>
+          ))}
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+/** Передняя часть причёски: шапочка волос, чёлка, пучок, кудри. */
+function FrontHair({ style, fill }: { style: AvatarConfig["hair"]; fill: string }) {
+  const cap = "M60 86 Q56 42 100 40 Q144 42 140 86 Q136 70 128 60 Q108 66 84 60 Q70 64 60 86 Z";
+  switch (style) {
+    case "bald":
+      return <path d="M92 47 Q100 40 108 47 Q100 45 92 47 Z" fill={fill} />;
+    case "spiky":
+      return (
+        <path
+          fill={fill}
+          d="M60 86 Q54 52 62 46 L68 26 L82 44 L92 18 L102 42 L114 18 L122 44 L132 26 L138 48 Q146 56 140 86 Q136 70 128 60 Q108 66 84 60 Q70 64 60 86 Z"
+        />
+      );
+    case "side":
+      return (
+        <g>
+          <path fill={fill} d="M58 88 Q48 38 104 35 Q150 40 142 88 Q140 64 118 55 Q96 62 72 76 Q62 80 58 88 Z" />
+          <path d="M104 36 Q92 44 84 58" fill="none" stroke="#000" strokeWidth={1.2} opacity={0.2} />
+        </g>
+      );
+    case "curly":
+      return (
+        <g fill={fill}>
+          <path d={cap} />
+          {[
+            [64, 66, 12],
+            [76, 50, 13],
+            [100, 42, 14],
+            [124, 50, 13],
+            [136, 66, 12],
+            [60, 84, 9],
+            [140, 84, 9],
+          ].map(([x, y, r]) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r={r} />
+          ))}
+        </g>
+      );
+    case "bun":
+      return (
+        <g fill={fill}>
+          <circle cx={100} cy={30} r={16} />
+          <path d={cap} />
+          <path d="M90 36 Q100 40 110 36" fill="none" stroke="#c8322b" strokeWidth={3} strokeLinecap="round" />
+        </g>
+      );
+    default:
+      return <path d={cap} fill={fill} />;
+  }
 }
 
 /** Борода: рисуется поверх лица, цвета волос. */
@@ -138,24 +200,24 @@ function Beard({ style, fill }: { style: AvatarConfig["beard"]; fill: string }) 
   }
 }
 
-/** Усы: пять форм. */
+/** Усы: рисуются между носом и ртом (y 97–107), рот ниже них остаётся виден. */
 function Mustache({ style, fill }: { style: AvatarConfig["mustacheStyle"]; fill: string }) {
   switch (style) {
     case "classic":
-      return <path d="M88 103 Q94 99 100 102 Q106 99 112 103 Q106 107 100 104 Q94 107 88 103 Z" fill={fill} />;
+      return <path d="M87 104 Q94 98 100 101 Q106 98 113 104 Q106 102 100 103 Q94 102 87 104 Z" fill={fill} />;
     case "thick":
-      return <path d="M82 105 Q91 95 100 100 Q109 95 118 105 Q109 112 100 106 Q91 112 82 105 Z" fill={fill} />;
+      return <path d="M84 105 Q92 96 100 100 Q108 96 116 105 Q108 105 100 103 Q92 105 84 105 Z" fill={fill} />;
     case "thin":
-      return <path d="M87 103 Q100 97 113 103" fill="none" stroke={fill} strokeWidth={2.6} strokeLinecap="round" />;
+      return <path d="M88 102 Q100 98 112 102" fill="none" stroke={fill} strokeWidth={2.2} strokeLinecap="round" />;
     case "handlebar":
       return (
         <g fill="none" stroke={fill} strokeLinecap="round">
-          <path d="M100 102 Q91 97 83 103 Q79 107 79 100" strokeWidth={4} />
-          <path d="M100 102 Q109 97 117 103 Q121 107 121 100" strokeWidth={4} />
+          <path d="M100 101 Q92 99 85 102 Q81 104 81 99" strokeWidth={3} />
+          <path d="M100 101 Q108 99 115 102 Q119 104 119 99" strokeWidth={3} />
         </g>
       );
     case "chevron":
-      return <path d="M82 99 Q100 96 118 99 Q116 105 113 113 Q108 105 100 105 Q92 105 87 113 Q84 105 82 99 Z" fill={fill} />;
+      return <path d="M86 99 Q100 96 114 99 Q114 103 111 107 Q107 102 100 102 Q93 102 89 107 Q86 103 86 99 Z" fill={fill} />;
     default:
       return null;
   }

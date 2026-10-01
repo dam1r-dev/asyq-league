@@ -643,7 +643,7 @@ const en: Dict = {
     guestNote: "Guests can only pick free items and the character is saved in the browser. Log in to earn tiyn.",
     lockedNote: "You can try on items marked 🔒, but you need to buy them to save.",
     edit: "Customise your character",
-    styles: { short: "Short", long: "Long", braids: "Braids", bald: "Topknot" },
+    styles: { short: "Short", spiky: "Spiky", side: "Side part", curly: "Curly", bob: "Bob", long: "Long", ponytail: "Ponytail", bun: "Bun", braids: "Braids", bald: "Bald" },
     on: "Yes",
     off: "No",
   },

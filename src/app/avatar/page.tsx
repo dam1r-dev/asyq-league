@@ -110,7 +110,7 @@ export default function AvatarPage() {
             <Swatches colors={EYE_COLORS} value={a.eyes} onChange={(eyes) => set({ eyes })} />
           </Section>
           <Section title={t("avatar.hair")}>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {HAIR_STYLES.map((h) => (
                 <button
                   key={h}

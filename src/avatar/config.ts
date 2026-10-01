@@ -9,7 +9,7 @@ import { z } from "zod";
 export const SKIN_TONES = ["#f3d4b4", "#e2b48c", "#c9935f", "#a26d43", "#72492c"];
 export const EYE_COLORS = ["#5a3a1e", "#1e1916", "#3f7d3c", "#3a6ea8", "#8b6a2b"];
 export const HAIR_COLORS = ["#1c1613", "#3a2416", "#6f4323", "#9c5a2c", "#bdb6ad"];
-export const HAIR_STYLES = ["short", "long", "braids", "bald"] as const;
+export const HAIR_STYLES = ["short", "spiky", "side", "curly", "bob", "long", "ponytail", "bun", "braids", "bald"] as const;
 export type HairStyle = (typeof HAIR_STYLES)[number];
 
 /** Усы и борода — для персонажа-мужчины, всегда бесплатно. */
