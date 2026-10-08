@@ -57,6 +57,7 @@ export default function ShopPage() {
             <li>{t("coins.earn2")}</li>
             <li>{t("coins.earn3")}</li>
             <li>{t("coins.earn4")}</li>
+            <li>{t("coins.earn5")}</li>
           </ul>
         </div>
         <div className="flex gap-2 sm:flex-col">

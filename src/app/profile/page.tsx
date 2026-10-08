@@ -92,6 +92,10 @@ export default function ProfilePage() {
           <h1 className="truncate font-display text-2xl font-bold">{me.displayName}</h1>
           <p className="text-sm text-muted">@{me.username}</p>
           <div className="mt-2 font-display text-lg font-bold text-gold">🪙 {coins}</div>
+          <div className="mt-1 text-sm" title={t("coins.streakHint")}>
+            🔥 {me.streak > 0 ? t("coins.streakNow", { days: t("coins.streakDays", { n: me.streak }) }) : t("coins.streakNone")}
+            {me.streak > 0 && !me.playedToday && <span className="text-muted"> · {t("coins.streakPlayToday")}</span>}
+          </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href="/avatar" className="btn btn-primary !px-3 !py-2 text-sm">
               {t("avatar.edit")}

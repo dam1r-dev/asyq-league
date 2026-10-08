@@ -650,6 +650,13 @@ const en: Dict = {
     earn2: "+15 🪙 for taking part in the daily tournament",
     earn3: "Daily tournament places: 🥇 100, 🥈 70, 🥉 50, places 4–10 — 25 🪙 (paid out the next day)",
     earn4: "+100 🪙 when you sign up",
+    earn5: "+5 🪙 for each day of your streak (days played in a row), up to +35 🪙 a day",
+    streakDays: "{n} day|{n} days",
+    streakNow: "Streak: {days}",
+    streakNone: "No streak — play today",
+    streakPlayToday: "play today to keep it going",
+    streakLine: "🔥 {days} streak: +{amount} 🪙",
+    streakHint: "Play every day: +5 🪙 per streak day, up to +35 🪙",
   },
   color: {
     "color-green": "Green",

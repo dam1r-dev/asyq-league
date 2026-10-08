@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { attemptSchema, verifyAttempt } from "@/lib/verify";
 import { award, balance, REWARDS } from "@/lib/coins";
+import { streakOf } from "@/lib/streak";
+import { streakBonus } from "@/lib/streakCalc";
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
@@ -50,6 +52,12 @@ export const POST = safe(async (req: Request) => {
     if (await award(user.id, REWARDS.dailyPlay, "daily-play", `daily-play:${user.id}:${dayKey}`)) earned += REWARDS.dailyPlay;
   }
 
+  // Серия дней: за игру несколько дней подряд — бонус, один раз в день.
+  const { streak, today } = await streakOf(user.id);
+  const bonus = streakBonus(streak);
+  const gotStreak = bonus > 0 && (await award(user.id, bonus, "streak", `streak:${user.id}:${today}`));
+  if (gotStreak) earned += bonus;
+
   let rank: number | undefined;
   if (dayKey) {
     // Место в рейтинге дня = сколько игроков имеют лучший результат выше.
@@ -69,6 +77,8 @@ export const POST = safe(async (req: Request) => {
     best,
     rank,
     earned,
+    streak,
+    streakBonus: gotStreak ? bonus : 0,
     coins: await balance(user.id),
   });
 });

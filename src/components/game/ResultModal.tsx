@@ -121,6 +121,11 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
             {submit.status === "saved" && !!submit.earned && (
               <div className="mt-1 font-display text-sm font-bold text-gold">{t("coins.earned", { n: submit.earned })}</div>
             )}
+            {submit.status === "saved" && !!submit.streakBonus && (
+              <div className="mt-1 text-sm font-semibold text-text">
+                {t("coins.streakLine", { days: t("coins.streakDays", { n: submit.streak ?? 0 }), amount: submit.streakBonus })}
+              </div>
+            )}
             {submit.status === "error" && <span className="text-bad">{submit.message}</span>}
             {submit.status === "guest" && (
               <>

@@ -16,6 +16,9 @@ export interface Me {
   fieldSkin: string;
   avatar: AvatarConfig;
   coins: number;
+  /** Дней подряд с игрой и играл ли сегодня. */
+  streak: number;
+  playedToday: boolean;
   owned: string[];
   progress: Record<string, { best: number; stars: number }>;
 }

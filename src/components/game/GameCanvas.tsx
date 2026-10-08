@@ -5,6 +5,7 @@ import { fieldLook, saqaLook } from "@/lib/catalog";
 import { sfx, vibrate } from "@/lib/sound";
 import {
   ASYK_R,
+  PUDDLE_DRAG,
   SAQA_FRICTION,
   SAQA_R,
   THROW_SPREAD,
@@ -15,7 +16,7 @@ import {
 import { isAtRest, saqaStartY, stepWorld, type World } from "@/game/physics";
 import { drawBone, drawStone, initialAngle, renderFieldLayer } from "@/game/render";
 import { initRound, normalizeInput, startThrow } from "@/game/round";
-import type { AsykState, LevelDef, ThrowInput } from "@/game/types";
+import type { AsykState, LevelDef, Puddle, ThrowInput } from "@/game/types";
 import { useT } from "@/i18n/provider";
 
 /**
@@ -66,6 +67,25 @@ interface Popup {
   text: string;
   life: number;
   color: string;
+}
+
+/**
+ * Сколько пройдёт сақа до остановки по прямой. Идём шагами по 2 px и на каждом
+ * шаге уменьшаем v² на 2·a·ds, где a — трение (в луже умноженное на PUDDLE_DRAG).
+ */
+function stopDistance(x: number, y: number, dx: number, dy: number, speed: number, puddles: Puddle[]) {
+  if (puddles.length === 0) return (speed * speed) / (2 * SAQA_FRICTION);
+  const ds = 2;
+  let v2 = speed * speed;
+  let d = 0;
+  while (v2 > 0 && d < 3000) {
+    const px = x + dx * d;
+    const py = y + dy * d;
+    const wet = puddles.some((w) => (px - w.x) * (px - w.x) + (py - w.y) * (py - w.y) < w.r * w.r);
+    v2 -= 2 * SAQA_FRICTION * (wet ? PUDDLE_DRAG : 1) * ds;
+    d += ds;
+  }
+  return d;
 }
 
 export default function GameCanvas({
@@ -447,8 +467,8 @@ export default function GameCanvas({
       c.stroke();
 
       if (valid) {
-        // Свободный пробег при трении: v² / 2a.
-        const travel = (speed * speed) / (2 * SAQA_FRICTION);
+        // Пробег до остановки: на сухом v² / 2a, а в луже трение растёт — считаем по шагам.
+        const travel = stopDistance(x, y, dx, dy, speed, lv.puddles ?? []);
         let hitT = travel;
         let hit: { x: number; y: number } | null = null;
         const targets = [
