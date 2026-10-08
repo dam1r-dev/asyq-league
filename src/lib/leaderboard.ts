@@ -67,7 +67,7 @@ export async function universityBoard(): Promise<Row[]> {
     .sort((a, b) => b.value - a.value);
 }
 
-/** Мастера: сумма лучших звёзд по 12 основным испытаниям. */
+/** Мастера: сумма лучших звёзд по всем 28 испытаниям (из 84). */
 export async function mastersBoard(): Promise<Row[]> {
   const best = await prisma.attempt.groupBy({
     by: ["userId", "levelId"],

@@ -25,7 +25,7 @@ export const POST = safe(async (req: Request) => {
   const owned = await prisma.purchase.findUnique({ where: { userId_itemId: { userId: user.id, itemId: item.id } } });
   if (owned) return NextResponse.json({ ok: true, itemId: item.id });
   if (item.requiresStars) {
-    // Сумма лучших звёзд по 12 основным испытаниям.
+    // Сумма лучших звёзд по всем 28 испытаниям (из 84).
     const best = await prisma.attempt.groupBy({
       by: ["levelId"],
       where: { userId: user.id, kind: "level", levelId: { in: LEVELS.map((l) => l.id) } },

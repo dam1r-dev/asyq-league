@@ -149,7 +149,7 @@ export default function ShopPage() {
   );
 }
 
-/** Витрина премиального костюма «Алтын адам»: 5000 🪙 и 24 звезды. */
+/** Витрина премиального костюма «Алтын адам»: 5000 🪙 и 56 звёзд из 84. */
 function PremiumCard({ busy, onBuy }: { busy: boolean; onBuy: () => void }) {
   const { me, owns, avatar, coins } = useAccount();
   const t = useT();

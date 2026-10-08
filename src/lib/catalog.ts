@@ -119,7 +119,7 @@ export const CATALOG: ShopItem[] = [
   { id: "outfit-ton", kind: "outfit", name: "Тон", description: "", price: 300 },
   { id: "outfit-sauyt", kind: "outfit", name: "Батыр сауыты", description: "", price: 450 },
   // Цельный премиальный костюм: нужны и тиыны, и мастерство.
-  { id: "outfit-altyn-adam", kind: "outfit", name: "Алтын адам", description: "", price: 5000, requiresStars: 36 },
+  { id: "outfit-altyn-adam", kind: "outfit", name: "Алтын адам", description: "", price: 5000, requiresStars: 56 },
   // ——— Головные уборы
   { id: "hat-none", kind: "hat", name: "—", description: "", price: 0 },
   { id: "hat-taqiya", kind: "hat", name: "Ою тақия", description: "", price: 0 },
