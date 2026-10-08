@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { V_MAX } from "./constants";
+import { PUDDLE_DRAG, V_MAX } from "./constants";
 import { challengeToLevel, decodeChallenge, encodeChallenge, validLayout } from "./custom";
 import { dailyLevel } from "./daily";
 import { duelThrow, initDuel } from "./duel";
-import { ALL_LEVELS, getLevel } from "./levels";
+import { ALL_LEVELS, CHAPTERS, getLevel } from "./levels";
+import { createWorld, stepWorld } from "./physics";
 import { applyThrow, initRound, normalizeInput, replayRound } from "./round";
 import type { LevelDef, RoundState, ThrowInput } from "./types";
 
@@ -90,7 +91,7 @@ describe("физика", () => {
 describe("расстановки уровней", () => {
   for (const level of ALL_LEVELS) {
     it(`${level.id}: асыки и камни внутри кона и не налезают друг на друга`, () => {
-      expect(validLayout(level.asyks, level.stones, level.kon)).toBe(true);
+      expect(validLayout(level.asyks, level.stones, level.kon, level.puddles)).toBe(true);
     });
   }
 
@@ -142,5 +143,51 @@ describe("дуэль", () => {
     if (!d.last!.result.saqaInKon) expect(d.turn).toBe(0);
     d = duelThrow(d, { sx: 60, vx: 0, vy: -100 });
     expect(d.turn).toBe(1);
+  });
+});
+
+describe("лужи", () => {
+  const asyk = [{ id: 1, x: 200, y: 300 }];
+  /** Асык, которому дали скорость 300 px/s вверх: как далеко он уедет. */
+  function asykTravel(puddles: { x: number; y: number; r: number }[]) {
+    const w = createWorld(asyk, [], 560, { sx: 200, vx: 0, vy: -1 }, puddles);
+    const a = w.bodies[1];
+    a.vy = -300;
+    for (let i = 0; i < 120 * 5; i++) stepWorld(w);
+    return 300 - a.y;
+  }
+
+  it("асык в луже проезжает заметно меньше, чем по сухому", () => {
+    const dry = asykTravel([]);
+    const wet = asykTravel([{ x: 200, y: 280, r: 30 }]);
+    expect(wet).toBeLessThan(dry * 0.6);
+    expect(PUDDLE_DRAG).toBeGreaterThan(1);
+  });
+
+  it("лужа в стороне ничего не меняет", () => {
+    expect(asykTravel([{ x: 330, y: 150, r: 20 }])).toBe(asykTravel([]));
+  });
+
+  it("результат с лужами детерминирован и восстанавливается реплеем", () => {
+    const level = getLevel("l23")!;
+    expect(level.puddles?.length).toBeGreaterThan(0);
+    const inputs = [aim(level, 160, 200, 250, 1), aim(level, 240, 220, 230, 0.95)];
+    let state = initRound(level);
+    for (const i of inputs) state = applyThrow(state, i).state;
+    expect(replayRound(level, inputs)).toEqual(state);
+  });
+
+  it("лужи сохраняются в ссылке-испытании", () => {
+    const c = { t: "Вода", a: [[200, 250]] as [number, number][], s: [], w: [[200, 300, 24]] as [number, number, number][], n: 4 };
+    const decoded = decodeChallenge(encodeChallenge(c));
+    expect(decoded).toEqual(c);
+    expect(challengeToLevel(decoded!).puddles).toEqual([{ x: 200, y: 300, r: 24 }]);
+    expect(decodeChallenge(encodeChallenge({ ...c, w: [[20, 20, 24]] }))).toBeNull();
+  });
+
+  it("третья глава: 10 уровней с лужами, все проходимы ботом", () => {
+    const ch3 = CHAPTERS.find((c) => c.id === 3)!;
+    expect(ch3.levels).toHaveLength(10);
+    for (const l of ch3.levels) expect(l.puddles?.length).toBeGreaterThan(0);
   });
 });

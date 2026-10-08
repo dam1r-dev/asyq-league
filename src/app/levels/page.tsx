@@ -125,6 +125,9 @@ export function LevelPreview({ level, dim }: { level: LevelDef; dim?: boolean })
   return (
     <svg viewBox={`${x0} ${y0} ${size} ${size}`} className={`mx-auto aspect-square w-full max-w-[120px] ${dim ? "opacity-40" : ""}`} aria-hidden>
       <circle cx={level.kon.x} cy={level.kon.y} r={level.kon.r} fill="#2f2923" stroke="#f4efe6" strokeOpacity="0.6" strokeWidth="3" />
+      {(level.puddles ?? []).map((w, i) => (
+        <ellipse key={`w${i}`} cx={w.x} cy={w.y} rx={w.r} ry={w.r * 0.86} fill="#4fa3cf" opacity="0.9" />
+      ))}
       {level.stones.map((s, i) => (
         <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#77726a" />
       ))}

@@ -11,6 +11,11 @@ export interface Stone extends Point {
   r: number;
 }
 
+/** Лужа воды: не мешает проходу, но сильно замедляет асык и сақа внутри. */
+export interface Puddle extends Point {
+  r: number;
+}
+
 /** Описание испытания: расстановка, лимит бросков и планки для звёзд. */
 export interface LevelDef {
   id: string;
@@ -22,6 +27,8 @@ export interface LevelDef {
   lineY: number;
   asyks: Point[];
   stones: Stone[];
+  /** Лужи, замедляющие тела (необязательно). */
+  puddles?: Puddle[];
   throws: number;
   /** Выиграл за ≤ par3 бросков — 3 звезды, за ≤ par2 — 2, иначе 1. */
   par3: number;
@@ -29,7 +36,7 @@ export interface LevelDef {
   /** Платный набор испытаний (косметический контент, не даёт преимущества). */
   pack?: "legends";
   /** Номер главы кампании (по умолчанию 1). */
-  chapter?: 1 | 2;
+  chapter?: 1 | 2 | 3;
   hint?: string;
 }
 

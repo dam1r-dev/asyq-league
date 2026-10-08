@@ -32,7 +32,7 @@ export const POST = safe(async (req: Request) => {
     // Ключ зависит от баланса и минуты: параллельные входы не начислят дважды.
     const have = await balance(user.id);
     if (have < 1000)
-      await award(user.id, 1000 - have, "topup", `demo-refill:${user.id}:${have}:${Math.floor(Date.now() / 60000)}`);
+      await award(user.id, 1000 - have, "demo-refill", `demo-refill:${user.id}:${have}:${Math.floor(Date.now() / 60000)}`);
   }
   await createSession(user.id, user.sessionVersion);
   return NextResponse.json({ ok: true });

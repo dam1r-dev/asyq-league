@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ASYK_R, DEFAULT_KON, DEFAULT_LINE_Y } from "./constants";
-import type { Kon, LevelDef, Point, Stone } from "./types";
+import type { Kon, LevelDef, Point, Puddle, Stone } from "./types";
 
 /**
  * Авторские испытания из редактора. Вся расстановка упаковывается прямо в
@@ -10,12 +10,15 @@ import type { Kon, LevelDef, Point, Stone } from "./types";
 
 export const MAX_CUSTOM_ASYKS = 16;
 export const MAX_CUSTOM_STONES = 6;
+export const MAX_CUSTOM_PUDDLES = 4;
 
 const coord = z.number().finite();
 const schema = z.object({
   t: z.string().trim().max(40).default("Испытание от друга"),
   a: z.array(z.tuple([coord, coord])).min(1).max(MAX_CUSTOM_ASYKS),
   s: z.array(z.tuple([coord, coord, z.number().min(10).max(22)])).max(MAX_CUSTOM_STONES).default([]),
+  /** Лужи: [x, y, радиус]. */
+  w: z.array(z.tuple([coord, coord, z.number().min(14).max(40)])).max(MAX_CUSTOM_PUDDLES).optional(),
   n: z.number().int().min(2).max(15),
   by: z.string().trim().max(24).optional(),
   sc: z.number().int().min(0).max(999).optional(),
@@ -53,7 +56,8 @@ export function decodeChallenge(code: string): CustomChallenge | null {
     // Всё должно лежать внутри кона и не налезать друг на друга.
     const asyks = c.a.map(([x, y]) => ({ x, y }));
     const stones = c.s.map(([x, y, r]) => ({ x, y, r }));
-    if (!validLayout(asyks, stones, konOf(c))) return null;
+    const puddles = (c.w ?? []).map(([x, y, r]) => ({ x, y, r }));
+    if (!validLayout(asyks, stones, konOf(c), puddles)) return null;
     return c;
   } catch {
     return null;
@@ -64,10 +68,11 @@ function konOf(c: CustomChallenge): Kon {
   return c.k ? { x: c.k[0], y: c.k[1], r: c.k[2] } : DEFAULT_KON;
 }
 
-export function validLayout(asyks: Point[], stones: Stone[], kon: Kon = DEFAULT_KON) {
+export function validLayout(asyks: Point[], stones: Stone[], kon: Kon = DEFAULT_KON, puddles: Puddle[] = []) {
   const d = (a: Point, b: Point) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
   for (const a of asyks) if (d(a, kon) + ASYK_R > kon.r) return false;
   for (const s of stones) if (d(s, kon) + s.r > kon.r + 40) return false;
+  for (const w of puddles) if (d(w, kon) + w.r > kon.r + 40) return false;
   const all = [...asyks.map((p) => ({ ...p, r: ASYK_R })), ...stones];
   for (let i = 0; i < all.length; i++)
     for (let j = i + 1; j < all.length; j++)
@@ -86,6 +91,7 @@ export function challengeToLevel(c: CustomChallenge): LevelDef {
     lineY: c.l ?? DEFAULT_LINE_Y,
     asyks: c.a.map(([x, y]) => ({ x, y })),
     stones: c.s.map(([x, y, r]) => ({ x, y, r })),
+    ...(c.w?.length ? { puddles: c.w.map(([x, y, r]) => ({ x, y, r })) } : {}),
     throws: c.n,
     par3,
     par2: Math.min(c.n, par3 + 2),
@@ -103,6 +109,7 @@ export function levelToChallenge(
     t: level.title.slice(0, 40),
     a: level.asyks.map((p) => [p.x, p.y]),
     s: level.stones.map((s) => [s.x, s.y, s.r]),
+    ...(level.puddles?.length ? { w: level.puddles.map((w) => [w.x, w.y, w.r] as [number, number, number]) } : {}),
     n: level.throws,
     ...(isDefault ? {} : { k: [level.kon.x, level.kon.y, level.kon.r] as [number, number, number] }),
     ...(level.lineY !== DEFAULT_LINE_Y ? { l: level.lineY } : {}),

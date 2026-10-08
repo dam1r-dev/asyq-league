@@ -1,7 +1,7 @@
 import type { FieldLook, SaqaLook } from "@/lib/catalog";
 import { ASYK_R, SAQA_R, THROW_SPREAD, WORLD_H, WORLD_W } from "./constants";
 import { hashString, mulberry32 } from "./rng";
-import type { LevelDef, Point, Stone } from "./types";
+import type { LevelDef, Point, Puddle, Stone } from "./types";
 
 /** Рисование на canvas. Никакой логики игры — только картинка. */
 
@@ -62,6 +62,36 @@ export function drawBone(
   ctx.strokeStyle = look.dye ?? "rgba(120,85,50,0.55)";
   ctx.lineWidth = Math.max(0.8, r * 0.12);
   ctx.stroke();
+  ctx.restore();
+}
+
+/** Лужа воды: тёмная кромка, голубая вода и пара бликов-кругов. */
+export function drawPuddle(ctx: CanvasRenderingContext2D, w: Puddle) {
+  const rand = mulberry32(hashString(`w${w.x}:${w.y}`));
+  ctx.save();
+  // Неровная кромка: эллипс чуть шире воды.
+  ctx.beginPath();
+  ctx.ellipse(w.x, w.y, w.r * 1.08, w.r * 0.94, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(40,30,20,0.35)";
+  ctx.fill();
+  const g = ctx.createRadialGradient(w.x - w.r * 0.3, w.y - w.r * 0.35, 1, w.x, w.y, w.r);
+  g.addColorStop(0, "#9bd8ef");
+  g.addColorStop(0.6, "#4fa3cf");
+  g.addColorStop(1, "#2f78a8");
+  ctx.beginPath();
+  ctx.ellipse(w.x, w.y, w.r, w.r * 0.86, 0, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.globalAlpha = 0.92;
+  ctx.fill();
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = "#e6f6ff";
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 2; i++) {
+    const k = 0.35 + i * 0.28 + rand() * 0.05;
+    ctx.beginPath();
+    ctx.ellipse(w.x + (rand() - 0.5) * 4, w.y + (rand() - 0.5) * 3, w.r * k, w.r * k * 0.86, 0, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -158,6 +188,8 @@ export function renderFieldLayer(level: LevelDef, look: FieldLook, scale: number
   v.addColorStop(1, "rgba(0,0,0,0.45)");
   ctx.fillStyle = v;
   ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+  for (const w of level.puddles ?? []) drawPuddle(ctx, w);
 
   // Меловой кон — несколько неровных проходов, как рисуют рукой.
   ctx.strokeStyle = look.chalk;

@@ -6,14 +6,15 @@ import { addRoundFromEditor } from "@/components/game/DuelOptions";
 import { useEffect, useRef, useState } from "react";
 import { useAccount } from "@/components/AccountProvider";
 import { ASYK_R, DEFAULT_KON, DEFAULT_LINE_Y, WORLD_H, WORLD_W } from "@/game/constants";
-import { encodeChallenge, MAX_CUSTOM_ASYKS, MAX_CUSTOM_STONES, validLayout } from "@/game/custom";
-import { drawBone, drawStone, initialAngle, renderFieldLayer } from "@/game/render";
-import type { LevelDef, Point, Stone } from "@/game/types";
+import { encodeChallenge, MAX_CUSTOM_ASYKS, MAX_CUSTOM_PUDDLES, MAX_CUSTOM_STONES, validLayout } from "@/game/custom";
+import { drawBone, drawPuddle, drawStone, initialAngle, renderFieldLayer } from "@/game/render";
+import type { LevelDef, Point, Puddle, Stone } from "@/game/types";
 import { fieldLook } from "@/lib/catalog";
 import { useT } from "@/i18n/provider";
 
-type Tool = "asyk" | "stone" | "erase";
+type Tool = "asyk" | "stone" | "puddle" | "erase";
 const STONE_R = 14;
+const PUDDLE_R = 24;
 
 const PRESET: Point[] = Array.from({ length: 7 }, (_, i) => ({ x: 200 - 3 * 24 + i * 24, y: 250 }));
 
@@ -23,6 +24,7 @@ export default function EditorPage() {
   const router = useRouter();
   const [asyks, setAsyks] = useState<Point[]>(PRESET);
   const [stones, setStones] = useState<Stone[]>([]);
+  const [puddles, setPuddles] = useState<Puddle[]>([]);
   const [tool, setTool] = useState<Tool>("asyk");
   const [throws, setThrows] = useState(6);
   const [title, setTitle] = useState("");
@@ -65,9 +67,10 @@ export default function EditorPage() {
     const bg = renderFieldLayer(level, fieldLook(fieldSkin), scale * dpr);
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, -VIEW.y0 * scale * dpr);
     ctx.drawImage(bg, 0, 0, WORLD_W, WORLD_H);
+    puddles.forEach((w) => drawPuddle(ctx, w));
     stones.forEach((s) => drawStone(ctx, s));
     asyks.forEach((a, i) => drawBone(ctx, a.x, a.y, ASYK_R, initialAngle(i + 1)));
-  }, [asyks, stones, width, height, fieldSkin, VIEW.y0]);
+  }, [asyks, stones, puddles, width, height, fieldSkin, VIEW.y0]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -78,10 +81,13 @@ export default function EditorPage() {
     setMessage(null);
     const hitAsyk = asyks.findIndex((a) => Math.hypot(a.x - p.x, a.y - p.y) < ASYK_R + 4);
     const hitStone = stones.findIndex((s) => Math.hypot(s.x - p.x, s.y - p.y) < s.r + 4);
-    if (tool === "erase" || hitAsyk >= 0 || hitStone >= 0) {
+    // Лужу убирают ластиком или повторным нажатием инструментом «Лужа»: асыки и камни можно ставить прямо на воду.
+    const hitPuddle = tool === "puddle" || tool === "erase" ? puddles.findIndex((w) => Math.hypot(w.x - p.x, w.y - p.y) < w.r) : -1;
+    if (tool === "erase" || hitAsyk >= 0 || hitStone >= 0 || hitPuddle >= 0) {
       // Нажатие по фигуре — удаляет её (удобно на телефоне без отдельного ластика).
       if (hitAsyk >= 0) setAsyks(asyks.filter((_, i) => i !== hitAsyk));
       else if (hitStone >= 0) setStones(stones.filter((_, i) => i !== hitStone));
+      else if (hitPuddle >= 0) setPuddles(puddles.filter((_, i) => i !== hitPuddle));
       return;
     }
     if (tool === "asyk") {
@@ -89,6 +95,11 @@ export default function EditorPage() {
       const next = [...asyks, p];
       if (!validLayout(next, stones)) return setMessage(t("editor.badAsyk"));
       setAsyks(next);
+    } else if (tool === "puddle") {
+      if (puddles.length >= MAX_CUSTOM_PUDDLES) return setMessage(t("editor.maxPuddles", { n: MAX_CUSTOM_PUDDLES }));
+      const next = [...puddles, { ...p, r: PUDDLE_R }];
+      if (!validLayout(asyks, stones, undefined, next)) return setMessage(t("editor.badPuddle"));
+      setPuddles(next);
     } else {
       if (stones.length >= MAX_CUSTOM_STONES) return setMessage(t("editor.maxStones", { n: MAX_CUSTOM_STONES }));
       const next = [...stones, { ...p, r: STONE_R }];
@@ -102,6 +113,7 @@ export default function EditorPage() {
       t: title.trim() || t("lvl.custom.title"),
       a: asyks.map((p) => [p.x, p.y]),
       s: stones.map((s) => [s.x, s.y, s.r]),
+      ...(puddles.length ? { w: puddles.map((w) => [w.x, w.y, w.r] as [number, number, number]) } : {}),
       n: throws,
       by: me?.displayName,
     });
@@ -135,11 +147,12 @@ export default function EditorPage() {
       </div>
       <p className="mt-1 text-sm text-muted">{t("editor.lead")}</p>
 
-      <div className="mt-4 grid grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1" role="radiogroup" aria-label={t("editor.tool")}>
+      <div className="mt-4 grid grid-cols-4 gap-1 rounded-2xl border border-line bg-surface p-1" role="radiogroup" aria-label={t("editor.tool")}>
         {(
           [
             ["asyk", t("editor.asyk")],
             ["stone", t("editor.stone")],
+            ["puddle", t("editor.puddle")],
             ["erase", t("editor.erase")],
           ] as [Tool, string][]
         ).map(([t, label]) => (
@@ -166,9 +179,9 @@ export default function EditorPage() {
       </div>
       <div className="mt-2 flex min-h-5 justify-between text-xs text-muted">
         <span>
-          {t("editor.counts", { a: asyks.length, amax: MAX_CUSTOM_ASYKS, s: stones.length, smax: MAX_CUSTOM_STONES })}
+          {t("editor.counts", { a: asyks.length, amax: MAX_CUSTOM_ASYKS, s: stones.length, smax: MAX_CUSTOM_STONES, w: puddles.length, wmax: MAX_CUSTOM_PUDDLES })}
         </span>
-        <button className="underline" onClick={() => (setAsyks([]), setStones([]))}>
+        <button className="underline" onClick={() => (setAsyks([]), setStones([]), setPuddles([]))}>
           {t("editor.clear")}
         </button>
       </div>

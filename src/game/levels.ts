@@ -1,5 +1,5 @@
 import { DEFAULT_KON, DEFAULT_LINE_Y } from "./constants";
-import type { Kon, LevelDef, Point, Stone } from "./types";
+import type { Kon, LevelDef, Point, Puddle, Stone } from "./types";
 
 const K = DEFAULT_KON;
 
@@ -21,10 +21,11 @@ function ring(n: number, radius: number, c: Point = K, phase = 0): Point[] {
 }
 
 function level(
-  def: Omit<LevelDef, "kon" | "lineY" | "stones"> & {
+  def: Omit<LevelDef, "kon" | "lineY" | "stones" | "puddles"> & {
     kon?: Kon;
     lineY?: number;
     stones?: Stone[];
+    puddles?: Puddle[];
   },
 ): LevelDef {
   return { kon: K, lineY: DEFAULT_LINE_Y, stones: [], ...def };
@@ -320,12 +321,189 @@ export const LEVELS: LevelDef[] = [
     par2: 9,
     chapter: 2,
   }),
+  // ——— Глава 3: «Су бойында» — лужи замедляют асыки и сақа
+  level({
+    id: "l19",
+    title: "Бұлақ",
+    subtitle: "Родник: лужа на пути сақа",
+    asyks: row(5),
+    puddles: [{ x: 200, y: 345, r: 30 }],
+    throws: 7,
+    par3: 4,
+    par2: 5,
+    chapter: 3,
+  }),
+  level({
+    id: "l20",
+    title: "Шалшық",
+    subtitle: "Лужа у кромки кона не выпускает асыки",
+    asyks: row(5, 190),
+    puddles: [{ x: 200, y: 122, r: 34 }],
+    throws: 7,
+    par3: 3,
+    par2: 5,
+    chapter: 3,
+  }),
+  level({
+    id: "l21",
+    title: "Көл",
+    subtitle: "Озёра по бокам ряда",
+    asyks: row(7),
+    puddles: [
+      { x: 118, y: 250, r: 30 },
+      { x: 282, y: 250, r: 30 },
+    ],
+    throws: 9,
+    par3: 5,
+    par2: 7,
+    chapter: 3,
+  }),
+  level({
+    id: "l22",
+    title: "Өзен",
+    subtitle: "Река по диагонали разделяет асыки",
+    asyks: [
+      ...row(4, 190, 24, 150),
+      ...row(4, 310, 24, 250),
+    ],
+    puddles: [
+      { x: 140, y: 290, r: 26 },
+      { x: 200, y: 250, r: 26 },
+      { x: 260, y: 210, r: 26 },
+    ],
+    throws: 9,
+    par3: 5,
+    par2: 7,
+    chapter: 3,
+  }),
+  level({
+    id: "l23",
+    title: "Тоған",
+    subtitle: "Пруд: кольцо асыков вокруг воды",
+    asyks: ring(8, 58, K, Math.PI / 8),
+    puddles: [{ x: 200, y: 250, r: 40 }],
+    throws: 9,
+    par3: 5,
+    par2: 7,
+    chapter: 3,
+  }),
+  level({
+    id: "l24",
+    title: "Сай",
+    subtitle: "Овраг: два камня и вода перед рядом из пяти",
+    asyks: row(5, 180, 26),
+    stones: [
+      { x: 140, y: 240, r: 14 },
+      { x: 260, y: 240, r: 14 },
+    ],
+    puddles: [{ x: 200, y: 232, r: 24 }],
+    throws: 10,
+    par3: 5,
+    par2: 7,
+    chapter: 3,
+  }),
+  level({
+    id: "l25",
+    title: "Жылға",
+    subtitle: "Ручей змейкой между асыками",
+    asyks: [
+      { x: 140, y: 170 },
+      { x: 164, y: 170 },
+      { x: 236, y: 232 },
+      { x: 260, y: 232 },
+      { x: 140, y: 294 },
+      { x: 164, y: 294 },
+      { x: 200, y: 232 },
+      { x: 200, y: 170 },
+    ],
+    puddles: [
+      { x: 200, y: 200, r: 24 },
+      { x: 150, y: 232, r: 24 },
+      { x: 200, y: 296, r: 24 },
+    ],
+    throws: 10,
+    par3: 5,
+    par2: 7,
+    chapter: 3,
+  }),
+  level({
+    id: "l26",
+    title: "Оазис",
+    subtitle: "Оазис: девять асыков и четыре лужи по углам",
+    asyks: [
+      ...row(3, 226, 24),
+      ...row(3, 250, 24),
+      ...row(3, 274, 24),
+    ],
+    puddles: [
+      { x: 150, y: 200, r: 24 },
+      { x: 250, y: 200, r: 24 },
+      { x: 150, y: 300, r: 24 },
+      { x: 250, y: 300, r: 24 },
+    ],
+    throws: 10,
+    par3: 6,
+    par2: 8,
+    chapter: 3,
+  }),
+  level({
+    id: "l27",
+    title: "Жаңбыр",
+    subtitle: "Дождь: лужи рассыпаны по всему кону",
+    asyks: [
+      { x: 150, y: 170 },
+      { x: 250, y: 170 },
+      { x: 200, y: 200 },
+      { x: 120, y: 240 },
+      { x: 280, y: 240 },
+      { x: 175, y: 262 },
+      { x: 225, y: 262 },
+      { x: 150, y: 320 },
+      { x: 250, y: 320 },
+      { x: 200, y: 330 },
+    ],
+    puddles: [
+      { x: 175, y: 205, r: 22 },
+      { x: 235, y: 232, r: 22 },
+      { x: 140, y: 280, r: 22 },
+      { x: 220, y: 305, r: 22 },
+    ],
+    throws: 11,
+    par3: 6,
+    par2: 8,
+    chapter: 3,
+  }),
+  level({
+    id: "l28",
+    title: "Су иесі",
+    subtitle: "Хозяин воды: камни и озёра вокруг двенадцати асыков",
+    asyks: [
+      ...row(4, 190, 24, 200),
+      ...row(5, 222, 24, 200),
+      ...row(3, 254, 24, 200),
+    ],
+    stones: [
+      { x: 118, y: 222, r: 14 },
+      { x: 282, y: 222, r: 14 },
+    ],
+    puddles: [
+      { x: 200, y: 150, r: 28 },
+      { x: 135, y: 290, r: 26 },
+      { x: 265, y: 290, r: 26 },
+      { x: 200, y: 300, r: 22 },
+    ],
+    throws: 13,
+    par3: 7,
+    par2: 10,
+    chapter: 3,
+  }),
 ];
 
 /** Главы: вторая открывается после прохождения первой. */
 export const CHAPTERS = [
   { id: 1, levels: LEVELS.filter((l) => (l.chapter ?? 1) === 1) },
   { id: 2, levels: LEVELS.filter((l) => l.chapter === 2) },
+  { id: 3, levels: LEVELS.filter((l) => l.chapter === 3) },
 ];
 
 /** Платный набор «Дала аңыздары» — дополнительные испытания, не преимущество. */

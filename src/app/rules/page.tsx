@@ -126,7 +126,7 @@ export default async function RulesPage() {
       {/* Советы */}
       <Section title={t("rules.tipsTitle")} icon="💡">
         <ul className="grid gap-2 text-[15px]">
-          {[1, 2, 3, 4].map((n) => (
+          {[1, 2, 3, 4, 5].map((n) => (
             <li key={n} className="flex gap-2.5">
               <span className="text-gold">✦</span>
               <span className="leading-snug">{t(`rules.tip${n}`)}</span>

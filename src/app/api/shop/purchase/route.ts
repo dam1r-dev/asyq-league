@@ -21,7 +21,7 @@ export const POST = safe(async (req: Request) => {
   if (!body) return fail("badData");
 
   const item = getItem(body.itemId);
-  if (!item || item.price <= 0 || item.kind === "coins") return fail("notForSale");
+  if (!item || item.price <= 0) return fail("notForSale");
   const owned = await prisma.purchase.findUnique({ where: { userId_itemId: { userId: user.id, itemId: item.id } } });
   if (owned) return NextResponse.json({ ok: true, itemId: item.id });
   if (item.requiresStars) {

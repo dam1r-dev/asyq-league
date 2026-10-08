@@ -58,7 +58,7 @@ export function inputPower(input: ThrowInput) {
 }
 
 export function startThrow(state: RoundState, input: ThrowInput): World {
-  return createWorld(state.asyks, state.level.stones, state.level.lineY, input);
+  return createWorld(state.asyks, state.level.stones, state.level.lineY, input, state.level.puddles ?? []);
 }
 
 /** Прогоняет симуляцию до полной остановки всех тел. */

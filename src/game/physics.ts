@@ -3,13 +3,14 @@ import {
   ASYK_MASS,
   ASYK_R,
   DT,
+  PUDDLE_DRAG,
   RESTITUTION,
   SAQA_FRICTION,
   SAQA_MASS,
   SAQA_R,
   STONE_RESTITUTION,
 } from "./constants";
-import type { AsykState, Body, CollisionEvent, Stone, ThrowInput } from "./types";
+import type { AsykState, Body, CollisionEvent, Puddle, Stone, ThrowInput } from "./types";
 
 /**
  * Небольшой детерминированный физический движок для кругов на плоскости
@@ -25,6 +26,7 @@ const STONE_ID_BASE = 1000;
 export interface World {
   bodies: Body[];
   step: number;
+  puddles: Puddle[];
   /** Id асыков, которых коснулась сақа за этот бросок. */
   saqaTouched: Set<number>;
 }
@@ -38,6 +40,7 @@ export function createWorld(
   stones: Stone[],
   lineY: number,
   input: ThrowInput,
+  puddles: Puddle[] = [],
 ): World {
   const bodies: Body[] = [
     {
@@ -78,7 +81,7 @@ export function createWorld(
       friction: 0,
     });
   });
-  return { bodies, step: 0, saqaTouched: new Set() };
+  return { bodies, step: 0, puddles, saqaTouched: new Set() };
 }
 
 /** Один шаг симуляции длиной DT. Возвращает удары, случившиеся на этом шаге. */
@@ -92,7 +95,16 @@ export function stepWorld(world: World): CollisionEvent[] {
     if (b.invMass === 0) continue;
     const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
     if (speed === 0) continue;
-    const dec = b.friction * DT;
+    let friction = b.friction;
+    for (const pd of world.puddles) {
+      const px = b.x - pd.x;
+      const py = b.y - pd.y;
+      if (px * px + py * py < pd.r * pd.r) {
+        friction *= PUDDLE_DRAG;
+        break;
+      }
+    }
+    const dec = friction * DT;
     if (speed <= dec) {
       b.vx = 0;
       b.vy = 0;

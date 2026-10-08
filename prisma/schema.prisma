@@ -69,7 +69,7 @@ model CoinTx {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Int
-  /// welcome | star | daily-play | daily-rank | purchase | topup
+  /// welcome | star | daily-play | daily-rank | purchase | demo-refill
   reason    String
   refKey    String   @unique
   createdAt DateTime @default(now())

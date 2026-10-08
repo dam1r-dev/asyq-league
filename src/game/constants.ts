@@ -31,5 +31,8 @@ export const V_MAX = 800;
 /** Как далеко от центра кона можно встать на линии броска. */
 export const THROW_SPREAD = 150;
 
+/** Лужа: внутри неё трение растёт в столько раз — тело быстро теряет скорость. */
+export const PUDDLE_DRAG = 10;
+
 export const DEFAULT_KON = { x: 200, y: 250, r: 140 };
 export const DEFAULT_LINE_Y = 560;

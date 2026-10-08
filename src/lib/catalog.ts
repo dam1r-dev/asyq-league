@@ -9,7 +9,7 @@ import { COLOR_HEX } from "@/avatar/config";
  * пакетов тиынов — для тех, кто не хочет ждать.
  */
 
-export type ItemKind = "saqa" | "field" | "pack" | "outfit" | "hat" | "color" | "coins";
+export type ItemKind = "saqa" | "field" | "pack" | "outfit" | "hat" | "color";
 
 export interface SaqaLook {
   base: string;
@@ -33,9 +33,6 @@ export interface ShopItem {
   description: string;
   /** Цена в тиынах (0 — бесплатно). */
   price: number;
-  /** Только для пакетов тиынов: цена в тенге (тестовая оплата) и сколько тиынов. */
-  priceKzt?: number;
-  coins?: number;
   /** Премиальный предмет: купить можно только набрав столько звёзд в испытаниях. */
   requiresStars?: number;
   saqa?: SaqaLook;
@@ -142,10 +139,6 @@ export const CATALOG: ShopItem[] = [
     description: "",
     price: { "color-white": 60, "color-black": 60, "color-burgundy": 80, "color-sky": 80, "color-silver": 150, "color-gold": 250 }[id as string] ?? 0,
   })),
-  // ——— Пакеты тиынов (тестовая оплата реальными деньгами)
-  { id: "coins-500", kind: "coins", name: "500", description: "", price: 0, priceKzt: 490, coins: 500 },
-  { id: "coins-1200", kind: "coins", name: "1200", description: "", price: 0, priceKzt: 990, coins: 1200 },
-  { id: "coins-3000", kind: "coins", name: "3000", description: "", price: 0, priceKzt: 1990, coins: 3000 },
 ];
 
 export const DEFAULT_SAQA = "saqa-classic";
@@ -165,5 +158,5 @@ export function fieldLook(id: string | undefined): FieldLook {
 
 export function isFree(id: string) {
   const item = getItem(id);
-  return !!item && item.kind !== "coins" && item.price === 0;
+  return !!item && item.price === 0;
 }
