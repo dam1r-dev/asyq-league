@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { attemptSchema, verifyAttempt } from "@/lib/verify";
 import { award, balance, REWARDS } from "@/lib/coins";
 import { streakOf } from "@/lib/streak";
+import { syncAchievements } from "@/lib/achievementsServer";
 import { streakBonus } from "@/lib/streakCalc";
 
 export const POST = safe(async (req: Request) => {
@@ -58,6 +59,10 @@ export const POST = safe(async (req: Request) => {
   const gotStreak = bonus > 0 && (await award(user.id, bonus, "streak", `streak:${user.id}:${today}`));
   if (gotStreak) earned += bonus;
 
+  // Достижения: проверяем после всех наград, чтобы серия и звёзды уже были учтены.
+  const ach = await syncAchievements(user.id).catch(() => ({ newly: [] as { id: string; reward: number }[] }));
+  earned += ach.newly.reduce((s, a) => s + a.reward, 0);
+
   let rank: number | undefined;
   if (dayKey) {
     // Место в рейтинге дня = сколько игроков имеют лучший результат выше.
@@ -79,6 +84,7 @@ export const POST = safe(async (req: Request) => {
     earned,
     streak,
     streakBonus: gotStreak ? bonus : 0,
+    achievements: ach.newly,
     coins: await balance(user.id),
   });
 });

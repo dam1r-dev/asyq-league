@@ -11,6 +11,8 @@ import { useI18n } from "@/i18n/provider";
 import { itemName, levelSubtitle, levelTitle } from "@/i18n/game";
 import { LANG_LOCALE } from "@/i18n/config";
 import Avatar from "@/avatar/Avatar";
+import { ACHIEVEMENTS } from "@/lib/achievements";
+import { renderShareCard, shareCardImage } from "@/lib/shareCard";
 
 interface HistoryData {
   recent: {
@@ -34,6 +36,8 @@ export default function ProfilePage() {
   const { t, lang } = useI18n();
   const [history, setHistory] = useState<HistoryData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [ach, setAch] = useState<{ id: string; unlockedAt: string | null }[] | null>(null);
+  const [imgBusy, setImgBusy] = useState(false);
 
   useEffect(() => {
     if (!me) return;
@@ -41,10 +45,18 @@ export default function ProfilePage() {
     fetch("/api/history")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => alive && setHistory(d));
+    // Заодно выдаются новые достижения (например, за победу в дуэли).
+    fetch("/api/achievements")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d) return;
+        setAch(d.items);
+        if (d.newly?.length) void refresh();
+      });
     return () => {
       alive = false;
     };
-  }, [me]);
+  }, [me, refresh]);
 
   if (loading) return <div className="p-8 text-center text-muted">{t("common.loading")}</div>;
   if (!me)
@@ -62,6 +74,29 @@ export default function ProfilePage() {
   const stars = LEVELS.reduce((s, l) => s + (me.progress[l.id]?.stars ?? 0), 0);
   const cleared = LEVELS.filter((l) => (me.progress[l.id]?.stars ?? 0) > 0).length;
   const next = LEVELS.find((l) => !me.progress[l.id]);
+
+  const unlockedCount = ach?.filter((a) => a.unlockedAt).length ?? 0;
+
+  /** Картинка профиля: звёзды, серия и достижения. */
+  const shareProfile = async () => {
+    setImgBusy(true);
+    try {
+      const blob = await renderShareCard({
+        title: me.displayName,
+        subtitle: t("share.profileTitle"),
+        stars: 0,
+        starsMax: 0,
+        big: `${stars}/${LEVELS.length * 3}`,
+        bigLabel: `${t("share.stars")} ⭐`,
+        chips: [`${t("share.ach")}: ${unlockedCount}/${ACHIEVEMENTS.length}`, `${t("share.streak")}: ${me.streak}`],
+        cta: t("share.cta"),
+        url: window.location.host,
+      });
+      await shareCardImage(blob, "asyq-league-profile.png", t("share.profileTitle"), window.location.origin);
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   const updateUniversity = async (university: string) => {
     setSaving(true);
@@ -151,6 +186,37 @@ export default function ProfilePage() {
           <span className="btn btn-primary !py-2 text-sm">{t("common.play")}</span>
         </Link>
       )}
+
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-bold">
+            {t("ach.title")} <span className="whitespace-nowrap text-sm font-normal text-muted">{ach ? `${unlockedCount} ${t("ach.of")} ${ACHIEVEMENTS.length}` : ""}</span>
+          </h2>
+          <p className="text-sm text-muted">{t("ach.lead")}</p>
+        </div>
+        <button className="btn btn-ghost shrink-0 !py-2 text-sm" onClick={shareProfile} disabled={imgBusy}>
+          {imgBusy ? t("share.preparing") : t("share.button")}
+        </button>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {ACHIEVEMENTS.map((a) => {
+          const got = ach?.find((x) => x.id === a.id)?.unlockedAt;
+          return (
+            <div
+              key={a.id}
+              className={`card flex items-center gap-3 px-3 py-2.5 ${got ? "border-gold/50" : "opacity-55"}`}
+              title={got ? t("ach.unlocked") : t("ach.locked")}
+            >
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-2xl ${got ? "" : "grayscale"}`}>{a.icon}</div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{t(`ach.items.${a.id}.name`)}</div>
+                <div className="text-xs leading-snug text-muted">{t(`ach.items.${a.id}.text`)}</div>
+              </div>
+              <span className="shrink-0 text-xs font-bold text-gold">{got ? "✓" : `+${a.reward} 🪙`}</span>
+            </div>
+          );
+        })}
+      </div>
 
       <h2 className="mt-8 font-display text-lg font-bold">{t("profile.records")}</h2>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">

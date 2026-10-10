@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, parseBody, safe } from "@/lib/api";
 import { CODE_RE, applyMatchThrow, publicState, seatOf, settleTimeouts } from "@/lib/match";
 import { prisma } from "@/lib/prisma";
+import { syncAchievements } from "@/lib/achievementsServer";
 import { limitedByIp } from "@/lib/rateLimit";
 import { inputSchema } from "@/lib/verify";
 
@@ -28,5 +29,10 @@ export const POST = safe(async (req: Request, ctx: RouteContext<"/api/match/[cod
   if (seat === null) return fail("notInMatch", 403);
   const r = await applyMatchThrow(m, seat, body.input, body.expected);
   if (!r.ok) return fail(r.error, r.status);
+  // Матч закончился: победителю-аккаунту сразу засчитываем достижение (матчи удаляются через сутки).
+  if (r.match.status === "finished") {
+    for (const uid of [r.match.hostUserId, r.match.guestUserId])
+      if (uid) await syncAchievements(uid).catch(() => {});
+  }
   return NextResponse.json(publicState(r.match));
 });

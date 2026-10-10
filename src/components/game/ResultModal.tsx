@@ -10,6 +10,8 @@ import type { SubmitState } from "./PlayScreen";
 import { useT } from "@/i18n/provider";
 import { tipText } from "@/i18n/game";
 import { LEVELS } from "@/game/levels";
+import { levelSubtitle, levelTitle } from "@/i18n/game";
+import { renderShareCard, shareCardImage } from "@/lib/shareCard";
 
 interface Props {
   round: RoundState;
@@ -31,6 +33,39 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
   const fact = t.maybe(`lvl.${round.level.id}.fact`) ?? t(`facts.f${(levelIndex % 6) + 1}`);
   const won = round.status === "won";
   const [shared, setShared] = useState<string | null>(null);
+  const [imgBusy, setImgBusy] = useState(false);
+  const [imgMsg, setImgMsg] = useState<string | null>(null);
+
+  /** Картинка с результатом: расстановка, звёзды и очки. */
+  const shareImage = async () => {
+    setImgBusy(true);
+    try {
+      const lv = round.level;
+      const blob = await renderShareCard({
+        title: levelTitle(lv, t),
+        subtitle: levelSubtitle(lv, t),
+        level: lv,
+        stars: round.stars,
+        starsMax: 3,
+        big: String(round.score),
+        bigLabel: t("result.points"),
+        chips: [t("common.asyksN", { n: round.knocked }), t("common.throwsN", { n: round.throwsUsed })],
+        cta: t("share.cta"),
+        url: window.location.host,
+      });
+      const res = await shareCardImage(
+        blob,
+        `asyq-league-${lv.id}.png`,
+        t("result.shareText", { knocked: round.knocked, score: round.score }),
+        window.location.origin,
+      );
+      setImgMsg(res === "saved" ? t("share.saved") : t("result.shared"));
+    } catch {
+      setImgMsg(t("play.netError"));
+    } finally {
+      setImgBusy(false);
+    }
+  };
 
   const combos = round.history.reduce((s, r) => s + r.comboBonus, 0);
   const penalties = round.history.reduce((s, r) => s + r.penalty, 0);
@@ -126,6 +161,12 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
                 {t("coins.streakLine", { days: t("coins.streakDays", { n: submit.streak ?? 0 }), amount: submit.streakBonus })}
               </div>
             )}
+            {submit.status === "saved" &&
+              submit.achievements?.map((a) => (
+                <div key={a.id} className="mt-1 text-sm font-semibold text-text">
+                  {t("ach.line", { name: t(`ach.items.${a.id}.name`), amount: a.reward })}
+                </div>
+              ))}
             {submit.status === "error" && <span className="text-bad">{submit.message}</span>}
             {submit.status === "guest" && (
               <>
@@ -156,6 +197,11 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
           <button className="btn btn-ghost" onClick={shareChallenge}>
             {shared ?? t("result.challenge")}
           </button>
+          {mode !== "custom" && (
+            <button className="btn btn-ghost" onClick={shareImage} disabled={imgBusy}>
+              {imgBusy ? t("share.preparing") : (imgMsg ?? t("share.button"))}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -31,7 +31,7 @@ export interface PlayScreenProps {
 
 export type SubmitState =
   | { status: "idle" | "saving" | "guest" }
-  | { status: "saved"; best: number; rank?: number; earned?: number; streak?: number; streakBonus?: number }
+  | { status: "saved"; best: number; rank?: number; earned?: number; streak?: number; streakBonus?: number; achievements?: { id: string; reward: number }[] }
   | { status: "error"; message: string };
 
 /** Раунд читает сохранение из localStorage, поэтому рендерится только в браузере. */
@@ -108,8 +108,8 @@ function PlayScreenInner(props: PlayScreenProps) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(errorText(data.error, t, t("play.saveError")));
-        setSubmit({ status: "saved", best: data.best, rank: data.rank, earned: data.earned, streak: data.streak, streakBonus: data.streakBonus });
-        if (data.earned || data.streak) void refresh();
+        setSubmit({ status: "saved", best: data.best, rank: data.rank, earned: data.earned, streak: data.streak, streakBonus: data.streakBonus, achievements: data.achievements });
+        if (data.earned || data.streak || data.achievements?.length) void refresh();
       } catch (e) {
         setSubmit({ status: "error", message: e instanceof Error ? e.message : t("play.netError") });
       }

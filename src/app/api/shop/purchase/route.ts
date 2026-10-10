@@ -4,6 +4,7 @@ import { fail, parseBody, safe } from "@/lib/api";
 import { getSessionUser } from "@/lib/auth";
 import { getItem } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
+import { syncAchievements } from "@/lib/achievementsServer";
 import { rateLimit } from "@/lib/rateLimit";
 import { LEVELS } from "@/game/levels";
 
@@ -57,5 +58,6 @@ export const POST = safe(async (req: Request) => {
 
   if (item.kind === "saqa") await prisma.user.update({ where: { id: user.id }, data: { saqaSkin: item.id } });
   if (item.kind === "field") await prisma.user.update({ where: { id: user.id }, data: { fieldSkin: item.id } });
-  return NextResponse.json({ ok: true, itemId: item.id });
+  const ach = await syncAchievements(user.id).catch(() => ({ newly: [] as { id: string; reward: number }[] }));
+  return NextResponse.json({ ok: true, itemId: item.id, achievements: ach.newly });
 });
