@@ -178,6 +178,15 @@ export function toggleSound() {
   setSoundEnabled(next);
 }
 
+/** Сложность прицела по кругу: лёгкий → средний → сложный. */
+export function cycleAim() {
+  const order = ["long", "short", "none"] as const;
+  updateLocal((d) => ({
+    ...d,
+    settings: { ...d.settings, aim: order[(order.indexOf(d.settings.aim ?? "long") + 1) % order.length] },
+  }));
+}
+
 /** Управление сақой: стрелки ◀ ▶ или ползунок. */
 export function toggleMoveControl() {
   updateLocal((d) => ({

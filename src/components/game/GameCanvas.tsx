@@ -47,6 +47,8 @@ interface Props {
   remoteThrow?: { id: number; input: ThrowInput } | null;
   /** Как двигать сақа вдоль линии: стрелки ◀ ▶ или ползунок. */
   moveControl?: "buttons" | "slider";
+  /** Сложность прицела: long — весь путь, short — пара штрихов, none — без пунктира. */
+  aim?: "long" | "short" | "none";
   /** Заголовок/подпись поверх поля, например «Ход: Айдос». */
   overlay?: React.ReactNode;
 }
@@ -99,6 +101,7 @@ export default function GameCanvas({
   onThrowStart,
   overlay,
   moveControl = "buttons",
+  aim = "long",
   remoteThrow = null,
 }: Props) {
   const t = useT();
@@ -130,9 +133,9 @@ export default function GameCanvas({
 
   // Свежие пропсы для игрового цикла, который живёт вне рендера React.
   const forwardLabel = t("canvas.forward");
-  const propsRef = useRef({ level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel });
+  const propsRef = useRef({ level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel, aim });
   useLayoutEffect(() => {
-    propsRef.current = { level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel };
+    propsRef.current = { level, asyks, disabled, sx, onThrowEnd, onThrowStart, saqaSkin, forwardLabel, aim };
   });
 
   // Подгоняем canvas под контейнер, сохраняя пропорции поля.
@@ -466,7 +469,9 @@ export default function GameCanvas({
       c.lineTo(x + (a.x1 - a.x0), y + (a.y1 - a.y0));
       c.stroke();
 
-      if (valid) {
+      // Лёгкий — весь путь до удара; средний — только пара штрихов у сақа; сложный — без пунктира.
+      const assist = propsRef.current.aim;
+      if (valid && assist !== "none") {
         // Пробег до остановки: на сухом v² / 2a, а в луже трение растёт — считаем по шагам.
         const travel = stopDistance(x, y, dx, dy, speed, lv.puddles ?? []);
         let hitT = travel;
@@ -489,6 +494,9 @@ export default function GameCanvas({
             hit = { x: x + dx * tt, y: y + dy * tt };
           }
         }
+        const SHORT_LEN = 64; // ≈ пять штрихов по 5 + 7 px
+        const lineLen = assist === "short" ? Math.min(hitT, SHORT_LEN) : hitT;
+        const shown = assist === "short" ? hitT <= SHORT_LEN : true;
         c.setLineDash([5, 7]);
         c.lineDashOffset = -s.t * 30;
         c.strokeStyle = color;
@@ -496,16 +504,16 @@ export default function GameCanvas({
         c.lineWidth = 2.5;
         c.beginPath();
         c.moveTo(x, y);
-        c.lineTo(x + dx * hitT, y + dy * hitT);
+        c.lineTo(x + dx * lineLen, y + dy * lineLen);
         c.stroke();
         c.setLineDash([]);
-        if (hit) {
+        if (shown && hit) {
           c.beginPath();
           c.arc(hit.x, hit.y, SAQA_R, 0, Math.PI * 2);
           c.strokeStyle = color;
           c.lineWidth = 1.5;
           c.stroke();
-        } else {
+        } else if (shown) {
           // Где сақа остановится без удара
           c.beginPath();
           c.arc(x + dx * hitT, y + dy * hitT, 4, 0, Math.PI * 2);

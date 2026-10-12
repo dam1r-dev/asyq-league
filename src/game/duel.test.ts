@@ -5,6 +5,7 @@ import {
   DUEL_LEVEL,
   duelLevel,
   duelThrow,
+  endDuel,
   initDuel,
   isValidDuelConfig,
   normalizeDuelConfig,
@@ -131,5 +132,29 @@ describe("проверка настроек", () => {
     expect(duelLevel("не-код")).toBeNull();
     expect(duelLevel(null)).toBe(DUEL_LEVEL);
     expect(duelLevel(code)).toBe(duelLevel(code));
+  });
+});
+
+describe("досрочное завершение", () => {
+  it("сдавшийся проигрывает, победа у соперника", () => {
+    const d = initDuel(["А", "Б"]);
+    const r = endDuel(d, 0);
+    expect(r.status).toBe("finished");
+    expect(r.winner).toBe(1);
+    expect(r.endedBy).toBe(0);
+    expect(endDuel(d, 1).winner).toBe(0);
+  });
+
+  it("«по очкам»: побеждает лидер, при равенстве ничья", () => {
+    const d = initDuel(["А", "Б"]);
+    expect(endDuel(d).winner).toBe("draw");
+    expect(endDuel({ ...d, scores: [3, 1] }).winner).toBe(0);
+    expect(endDuel({ ...d, scores: [1, 4] }).winner).toBe(1);
+    expect(endDuel(d).endedBy).toBe("points");
+  });
+
+  it("законченную дуэль повторно завершить нельзя", () => {
+    const done = endDuel(initDuel(["А", "Б"]), 0);
+    expect(endDuel(done, 1)).toBe(done);
   });
 });

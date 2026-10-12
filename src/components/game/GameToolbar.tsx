@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toggleMoveControl, toggleSound } from "@/components/AccountProvider";
+import { cycleAim, toggleMoveControl, toggleSound } from "@/components/AccountProvider";
 import { useLocal } from "@/lib/local";
 import { useT } from "@/i18n/provider";
 import QuickRules from "./QuickRules";
@@ -23,10 +23,11 @@ export default function GameToolbar({
   const [help, setHelp] = useState(false);
   const slider = local.settings.moveControl === "slider";
   const sound = local.settings.sound;
+  const aim = local.settings.aim ?? "long";
 
   return (
     <>
-      <div className={`grid gap-2 pb-2 ${onRestart ? "grid-cols-4" : "grid-cols-3"}`}>
+      <div className={`grid gap-2 pb-2 ${onRestart ? "grid-cols-5" : "grid-cols-4"}`}>
         {onRestart && (
           <ToolButton
             icon="↺"
@@ -43,6 +44,13 @@ export default function GameToolbar({
           title={slider ? t("play.moveButtons") : t("play.moveSlider")}
           onClick={toggleMoveControl}
           small
+        />
+        <ToolButton
+          icon={aim === "long" ? "🎯" : aim === "short" ? "·· ·" : "∅"}
+          label={t(`play.aim.${aim}`)}
+          title={t("play.aimTitle")}
+          onClick={cycleAim}
+          small={aim !== "long"}
         />
         <ToolButton icon="?" label={t("play.help")} title={t("play.helpTitle")} onClick={() => setHelp(true)} />
         <ToolButton

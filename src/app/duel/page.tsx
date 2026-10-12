@@ -10,7 +10,7 @@ import GameCanvas from "@/components/game/GameCanvas";
 import GameToolbar from "@/components/game/GameToolbar";
 import OnlineLobby from "@/components/game/OnlineLobby";
 import DuelOptions, { loadDuelOpts } from "@/components/game/DuelOptions";
-import { duelThrow, initDuel, normalizeDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
+import { duelThrow, endDuel, initDuel, normalizeDuelConfig, type DuelConfig, type DuelState } from "@/game/duel";
 import type { ThrowInput } from "@/game/types";
 import { useLocal } from "@/lib/local";
 import { sfx } from "@/lib/sound";
@@ -82,6 +82,26 @@ function Duel() {
     try {
       localStorage.setItem(KEY, JSON.stringify({ names: n, inputs: [], config: opts }));
     } catch {}
+  };
+
+  /** Досрочно закончить: побеждает тот, у кого сейчас больше очков. */
+  const finishByPoints = () => {
+    if (!duel || !window.confirm(t("duel.finishConfirm"))) return;
+    try {
+      localStorage.removeItem(KEY);
+    } catch {}
+    sfx.win();
+    setDuel(endDuel(duel));
+  };
+
+  /** Игрок, чей сейчас ход, сдаётся: победа достаётся сопернику. */
+  const resign = () => {
+    if (!duel || !window.confirm(t("duel.resignConfirm", { name: duel.names[duel.turn] }))) return;
+    try {
+      localStorage.removeItem(KEY);
+    } catch {}
+    sfx.win();
+    setDuel(endDuel(duel, duel.turn));
   };
 
   const onThrowEnd = useCallback(
@@ -171,6 +191,16 @@ function Duel() {
           ←
         </Link>
         <div className="flex-1 font-display text-[15px] font-bold">{t("duel.short")}</div>
+        {duel.status === "playing" && (
+          <div className="flex gap-2">
+            <button className="btn btn-ghost !px-3 !py-2 text-xs" onClick={finishByPoints}>
+              {t("duel.finishBtn")}
+            </button>
+            <button className="btn btn-ghost !px-3 !py-2 text-xs" onClick={resign}>
+              {t("duel.resignBtn")}
+            </button>
+          </div>
+        )}
       </div>
 
       <GameToolbar onRestart={restartDuel} restartDisabled={inputs.length === 0} />
@@ -197,42 +227,45 @@ function Duel() {
         })}
       </div>
 
+      {/* Статус хода — над полем, а не поверх него: поле должно быть видно целиком */}
+      <div className="mb-2" aria-live="polite">
+        {duel.status === "playing" && (
+          <div key={inputs.length} className="pop-in card flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-3 py-1.5 text-center text-sm">
+            {duel.roundsTotal > 1 && (
+              <span className="text-xs font-semibold text-gold">
+                {t("duel.roundOf", { n: duel.round + 1, total: duel.roundsTotal })}
+                {last?.roundOver ? ` · ${t("duel.newRound")}` : ""}
+              </span>
+            )}
+            {last && (
+              <span className="text-xs text-muted">
+                {duel.names[last.player]}:{" "}
+                {last.result.knockedIds.length
+                  ? t("duel.knocked", { n: last.result.knockedIds.length, sides: last.result.sides.map((x) => sideName(x, t)).join(", ") })
+                  : t("duel.miss")}
+                {last.result.penalty ? t("duel.penalty") : ""}
+              </span>
+            )}
+            <span>
+              <span className="font-bold text-gold">{turnName}</span>
+              {last?.extraTurn ? t("duel.again") : t("duel.yourTurn")}
+              {duel.config.perTurn > 1 && <span className="text-muted"> · {t("duel.turnLeft", { n: duel.turnLeft })}</span>}
+            </span>
+          </div>
+        )}
+      </div>
+
       <div className="relative min-h-0 flex-1">
         <GameCanvas
           key={`${runId}-${duel.round}`}
           moveControl={moveControl}
+          aim={local.settings.aim ?? "long"}
           level={duel.field.level}
           asyks={duel.field.asyks}
           disabled={duel.status !== "playing"}
           saqaSkin={saqaSkin}
           fieldSkin={fieldSkin}
           onThrowEnd={onThrowEnd}
-          overlay={
-            duel.status === "playing" && (
-              <div className="pointer-events-none absolute inset-x-3 top-3">
-                <div key={inputs.length} className="pop-in card px-3 py-2 text-center text-sm">
-                  {duel.roundsTotal > 1 && (
-                    <div className="text-xs font-semibold text-gold">
-                      {t("duel.roundOf", { n: duel.round + 1, total: duel.roundsTotal })}
-                      {last?.roundOver ? ` · ${t("duel.newRound")}` : ""}
-                    </div>
-                  )}
-                  {last && (
-                    <div className="text-xs text-muted">
-                      {duel.names[last.player]}:{" "}
-                      {last.result.knockedIds.length
-                        ? t("duel.knocked", { n: last.result.knockedIds.length, sides: last.result.sides.map((x) => sideName(x, t)).join(", ") })
-                        : t("duel.miss")}
-                      {last.result.penalty ? t("duel.penalty") : ""}
-                    </div>
-                  )}
-                  <span className="font-bold text-gold">{turnName}</span>
-                  {last?.extraTurn ? t("duel.again") : t("duel.yourTurn")}
-                  {duel.config.perTurn > 1 && <span className="text-muted"> · {t("duel.turnLeft", { n: duel.turnLeft })}</span>}
-                </div>
-              </div>
-            )
-          }
         />
       </div>
 
@@ -243,6 +276,11 @@ function Duel() {
             <h2 className="mt-3 font-display text-2xl font-bold">
               {duel.winner === "draw" ? t("duel.draw") : t("duel.wins", { name: duel.names[duel.winner as 0 | 1] })}
             </h2>
+            {duel.endedBy !== undefined && (
+              <p className="mt-1 text-sm text-muted">
+                {duel.endedBy === "points" ? t("duel.endedPoints") : t("duel.resignedBy", { name: duel.names[duel.endedBy] })}
+              </p>
+            )}
             <p className="mt-2 text-muted">
               {duel.names[0]} {duel.scores[0]} : {duel.scores[1]} {duel.names[1]}
             </p>

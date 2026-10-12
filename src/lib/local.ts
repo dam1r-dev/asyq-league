@@ -12,6 +12,8 @@ import { DEFAULT_AVATAR, type AvatarConfig } from "@/avatar/config";
  * сервер при синхронизации проверит броски сам.
  */
 
+export type AimAssist = "long" | "short" | "none";
+
 export interface LevelRecord {
   best: number;
   stars: number;
@@ -40,6 +42,8 @@ export interface LocalData {
     avatar: AvatarConfig;
     /** Как двигать сақа вдоль линии. */
     moveControl?: "buttons" | "slider";
+    /** Сложность прицела: длинный пунктир, короткий (пара штрихов) или без пунктира. */
+    aim?: AimAssist;
   };
 }
 

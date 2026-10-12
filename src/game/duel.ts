@@ -101,6 +101,8 @@ export interface DuelState {
   status: "playing" | "finished";
   winner: 0 | 1 | "draw" | null;
   last: { player: 0 | 1; result: ThrowResult; extraTurn: boolean; roundOver: boolean } | null;
+  /** Как закончилась дуэль досрочно: кто-то сдался (0/1) или «по очкам». */
+  endedBy?: 0 | 1 | "points";
 }
 
 function startRound(config: DuelConfig, index: number) {
@@ -197,4 +199,21 @@ export function duelThrow(state: DuelState, input: ThrowInput): DuelState {
     turnLeft: left,
     last: { player, result, extraTurn: turn === player, roundOver: false },
   };
+}
+
+/**
+ * Досрочное завершение офлайн-дуэли. Сдавшийся проигрывает; «по очкам» —
+ * побеждает тот, у кого сейчас больше очков (при равенстве ничья).
+ */
+export function endDuel(state: DuelState, resigner?: 0 | 1): DuelState {
+  if (state.status !== "playing") return state;
+  const winner =
+    resigner !== undefined
+      ? ((1 - resigner) as 0 | 1)
+      : state.scores[0] === state.scores[1]
+        ? "draw"
+        : state.scores[0] > state.scores[1]
+          ? 0
+          : 1;
+  return { ...state, status: "finished", winner, turnLeft: 0, endedBy: resigner ?? "points" };
 }

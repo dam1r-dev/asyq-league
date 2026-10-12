@@ -407,6 +407,7 @@ function Match({ code }: { code: string }) {
           saqaSkin={saqaSkin}
           fieldSkin={fieldSkin}
           moveControl={local.settings.moveControl ?? "buttons"}
+          aim={local.settings.aim ?? "long"}
           remoteThrow={remote}
           onThrowEnd={onThrowEnd}
         />

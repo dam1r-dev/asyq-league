@@ -219,6 +219,7 @@ function PlayScreenInner(props: PlayScreenProps) {
         <GameCanvas
           key={runId}
           moveControl={moveControl}
+          aim={local.settings.aim ?? "long"}
           level={level}
           asyks={round.asyks}
           disabled={round.status !== "playing"}
