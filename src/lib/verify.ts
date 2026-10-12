@@ -15,6 +15,8 @@ export const attemptSchema = z.object({
   kind: z.enum(["level", "daily"]),
   levelId: z.string().max(40),
   dayKey: z.string().optional(),
+  /** Сложность прицела, как её назвал клиент (влияет только на небольшой бонус тиынов). */
+  aim: z.enum(["long", "short", "none"]).optional(),
   inputs: z.array(inputSchema).min(1).max(20),
 });
 

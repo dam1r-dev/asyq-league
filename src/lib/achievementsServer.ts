@@ -9,7 +9,7 @@ import { streakOf } from "./streak";
 export async function collectStats(userId: string): Promise<AchStats> {
   const levelIds = LEVELS.map((l) => l.id);
   const bigLevelIds = levelIds.filter((id) => (getLevel(id)?.asyks.length ?? 0) >= 5);
-  const [best, knocked, oneThrow, daily, purchases, duelWins, streak] = await Promise.all([
+  const [best, knocked, oneThrow, daily, purchases, duelWins, streak, hardWins] = await Promise.all([
     prisma.attempt.groupBy({
       by: ["levelId"],
       where: { userId, kind: "level", levelId: { in: levelIds } },
@@ -29,6 +29,7 @@ export async function collectStats(userId: string): Promise<AchStats> {
       },
     }),
     streakOf(userId),
+    prisma.coinTx.count({ where: { userId, reason: "aim-bonus", refKey: { endsWith: ":none" } } }),
   ]);
 
   const stars = new Map(best.map((b) => [b.levelId, b._max.stars ?? 0]));
@@ -49,6 +50,7 @@ export async function collectStats(userId: string): Promise<AchStats> {
     dailyDays: daily.length,
     purchased: purchases > 0,
     duelWins,
+    hardWins,
   };
 }
 

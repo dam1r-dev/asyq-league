@@ -26,6 +26,8 @@ export interface AchStats {
   /** Куплена ли хоть одна платная вещь. */
   purchased: boolean;
   duelWins: number;
+  /** Сколько уровней пройдено на сложном прицеле (без пунктира). */
+  hardWins: number;
 }
 
 export interface AchDef {
@@ -56,6 +58,7 @@ export const ACHIEVEMENTS: AchDef[] = [
   { id: "daily_3", icon: "☀️", reward: 20, done: (s) => s.dailyDays >= 3 },
   { id: "daily_10", icon: "🏅", reward: 60, done: (s) => s.dailyDays >= 10 },
   { id: "shopper", icon: "🛍️", reward: 10, done: (s) => s.purchased },
+  { id: "hard_5", icon: "🦅", reward: 40, done: (s) => s.hardWins >= 5 },
   { id: "duel_win", icon: "⚔️", reward: 25, done: (s) => s.duelWins >= 1 },
 ];
 

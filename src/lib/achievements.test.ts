@@ -3,7 +3,7 @@ import { ACHIEVEMENTS, ACH_IDS, doneAchievements, type AchStats } from "./achiev
 
 const empty: AchStats = {
   stars: 0, cleared: 0, threeStar: 0, chapterDone: { 1: false, 2: false, 3: false },
-  oneThrowWin: false, puddleWin: false, knocked: 0, streak: 0, dailyDays: 0, purchased: false, duelWins: 0,
+  oneThrowWin: false, puddleWin: false, knocked: 0, streak: 0, dailyDays: 0, purchased: false, duelWins: 0, hardWins: 0,
 };
 
 describe("достижения", () => {
@@ -17,6 +17,10 @@ describe("достижения", () => {
     expect(doneAchievements({ ...empty, stars: 10 })).toContain("stars_10");
     expect(doneAchievements({ ...empty, streak: 7 })).toEqual(expect.arrayContaining(["streak_3", "streak_7"]));
     expect(doneAchievements({ ...empty, knocked: 100 })).toEqual(["knock_100"]);
+  });
+  it("орёл: пять уровней на сложном прицеле", () => {
+    expect(doneAchievements({ ...empty, hardWins: 4 })).not.toContain("hard_5");
+    expect(doneAchievements({ ...empty, hardWins: 5 })).toContain("hard_5");
   });
   it("полное прохождение даёт всё, что зависит от прогресса", () => {
     const full: AchStats = { ...empty, stars: 84, cleared: 28, threeStar: 28, chapterDone: { 1: true, 2: true, 3: true }, knocked: 600 };

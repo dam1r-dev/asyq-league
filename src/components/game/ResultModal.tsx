@@ -161,6 +161,9 @@ export default function ResultModal({ round, mode, submit, isRecord, challenge, 
                 {t("coins.streakLine", { days: t("coins.streakDays", { n: submit.streak ?? 0 }), amount: submit.streakBonus })}
               </div>
             )}
+            {submit.status === "saved" && !!submit.aimBonus && (
+              <div className="mt-1 text-sm font-semibold text-text">{t("coins.aimLine", { amount: submit.aimBonus })}</div>
+            )}
             {submit.status === "saved" &&
               submit.achievements?.map((a) => (
                 <div key={a.id} className="mt-1 text-sm font-semibold text-text">

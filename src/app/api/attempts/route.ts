@@ -9,6 +9,7 @@ import { award, balance, REWARDS } from "@/lib/coins";
 import { streakOf } from "@/lib/streak";
 import { syncAchievements } from "@/lib/achievementsServer";
 import { streakBonus } from "@/lib/streakCalc";
+import { AIM_REWARD, aimRefKey, aimTiers } from "@/lib/aimBonus";
 
 export const POST = safe(async (req: Request) => {
   const user = await getSessionUser();
@@ -46,9 +47,18 @@ export const POST = safe(async (req: Request) => {
   // Тиыны: за каждую новую звезду уровня (один раз за звезду) и за участие
   // в турнире дня (один раз в день).
   let earned = 0;
+  let aimBonus = 0;
   if (body.kind === "level") {
     for (let s = 1; s <= state.stars; s++)
       if (await award(user.id, REWARDS.star, "star", `star:${user.id}:${level.id}:${s}`)) earned += REWARDS.star;
+    // Бонус за сложный прицел: только за выигранный уровень, один раз на ступень.
+    if (state.status === "won") {
+      for (const tier of aimTiers(body.aim))
+        if (await award(user.id, AIM_REWARD[tier], "aim-bonus", aimRefKey(user.id, level.id, tier))) {
+          earned += AIM_REWARD[tier];
+          aimBonus += AIM_REWARD[tier];
+        }
+    }
   } else if (dayKey) {
     if (await award(user.id, REWARDS.dailyPlay, "daily-play", `daily-play:${user.id}:${dayKey}`)) earned += REWARDS.dailyPlay;
   }
@@ -84,6 +94,7 @@ export const POST = safe(async (req: Request) => {
     earned,
     streak,
     streakBonus: gotStreak ? bonus : 0,
+    aimBonus,
     achievements: ach.newly,
     coins: await balance(user.id),
   });
